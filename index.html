@@ -6,6 +6,12 @@
   <title>クラウド家計簿・会計システム</title>
   <!-- SheetJS for CSV/Excel Import -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --freee-blue: #0080ff;
@@ -64,7 +70,7 @@
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-md);
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       padding: 32px 28px;
     }
 
@@ -156,6 +162,14 @@
       padding: 4px 10px;
       border-radius: 20px;
       font-weight: 600;
+    }
+
+    .sync-status {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     /* メイン */
@@ -391,17 +405,17 @@
 
       <div class="auth-tabs">
         <button class="auth-tab-btn active" id="tab-btn-login" onclick="setAuthMode('login')">ログイン</button>
-        <button class="auth-tab-btn" id="tab-btn-register" onclick="setAuthMode('register')">新規アカウント作成</button>
+        <button class="auth-tab-btn" id="tab-btn-register" onclick="setAuthMode('register')">新規登録</button>
       </div>
 
       <form id="auth-form" onsubmit="handleAuth(event)">
         <div class="form-group">
-          <label class="form-label">アカウントID (ユーザー名)</label>
-          <input type="text" id="auth-username" class="form-control" placeholder="例: user01" required>
+          <label class="form-label">アカウントID (またはメールアドレス)</label>
+          <input type="text" id="auth-username" class="form-control" placeholder="例: user01 または user@example.com" required>
         </div>
         <div class="form-group">
-          <label class="form-label">パスワード</label>
-          <input type="password" id="auth-password" class="form-control" placeholder="パスワードを入力" required>
+          <label class="form-label">パスワード (6文字以上)</label>
+          <input type="password" id="auth-password" class="form-control" placeholder="パスワードを入力" required minlength="6">
         </div>
         <div id="auth-error-msg" style="color: #cf1322; font-size: 0.82rem; margin-bottom: 12px; display: none;"></div>
 
@@ -427,13 +441,14 @@
       <button class="nav-btn" onclick="switchTab('import')">データ取込</button>
     </nav>
     <div class="user-profile">
-      <span class="user-badge" id="current-user-display">user</span>
+      <span class="sync-status" id="sync-status-indicator">☁️ 同期中</span>
+      <span class="user-badge" id="current-user-display">ユーザー</span>
       <button class="btn btn-outline btn-sm" onclick="logout()">ログアウト</button>
     </div>
   </header>
 
   <main>
-    <!-- ================= 1. 仕訳入力 ================= -->
+    <!-- 1. 仕訳入力 -->
     <div id="view-entry" class="view-section active">
       <div class="card">
         <div class="card-header">
@@ -469,7 +484,6 @@
             </div>
 
             <div class="grid-2" style="margin-bottom: 16px;">
-              <!-- 借方 -->
               <div class="journal-box">
                 <div class="journal-box-header">
                   <span style="color: var(--freee-blue);">借方 (Debit)</span>
@@ -481,7 +495,6 @@
                 </div>
               </div>
 
-              <!-- 貸方 -->
               <div class="journal-box">
                 <div class="journal-box-header">
                   <span style="color: var(--expense-coral);">貸方 (Credit)</span>
@@ -504,7 +517,6 @@
               <input type="text" id="entry-note" class="form-control" placeholder="取引メモを入力">
             </div>
 
-            <!-- 自動判定ステータスプレビュー -->
             <div id="settlement-preview-bar" style="font-size: 0.84rem; color: var(--text-sub); margin-bottom: 16px; padding: 8px 12px; background: #fafbfc; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
               判定状態: <span id="settlement-preview-text" class="badge badge-settled">決済済み</span> (未決済科目が含まれる場合は自動で未決済になります)
             </div>
@@ -518,7 +530,7 @@
       </div>
     </div>
 
-    <!-- ================= 2. 仕訳帳 (複数選択・一括操作対応) ================= -->
+    <!-- 2. 仕訳帳 (複数選択・一括操作対応) -->
     <div id="view-journal" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -616,7 +628,7 @@
       </div>
     </div>
 
-    <!-- ================= 3. B/S・P/L (4タブ完全分離表示) ================= -->
+    <!-- 3. B/S・P/L (4タブ完全分離表示) -->
     <div id="view-reports" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -627,7 +639,6 @@
           </div>
         </div>
 
-        <!-- 4つの独立サブタブ -->
         <div class="sub-tabs">
           <button class="sub-tab-btn active" id="subtab-btn-pl" onclick="setReportSubTab('pl')">① 単月 P/L (損益計算書)</button>
           <button class="sub-tab-btn" id="subtab-btn-bs" onclick="setReportSubTab('bs')">② 単月 B/S (貸借対照表)</button>
@@ -636,7 +647,6 @@
         </div>
 
         <div class="card-body">
-          <!-- ① 単月 P/L -->
           <div id="report-view-pl" class="report-view">
             <div style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
               <div style="background-color: var(--freee-blue-light); padding: 10px 14px; font-weight: 700; color: var(--freee-blue);">
@@ -651,7 +661,6 @@
             </div>
           </div>
 
-          <!-- ② 単月 B/S -->
           <div id="report-view-bs" class="report-view" style="display: none;">
             <div style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
               <div style="background-color: var(--income-bg); padding: 10px 14px; font-weight: 700; color: var(--income-green);">
@@ -666,7 +675,6 @@
             </div>
           </div>
 
-          <!-- ③ 月次推移 P/L -->
           <div id="report-view-pl-trend" class="report-view" style="display: none;">
             <div style="margin-bottom: 8px; font-size: 0.82rem; color: var(--text-sub);">
               ※金額をクリックすると、該当月・科目の詳細仕訳が表示されます。
@@ -676,7 +684,6 @@
             </div>
           </div>
 
-          <!-- ④ 月次推移 B/S -->
           <div id="report-view-bs-trend" class="report-view" style="display: none;">
             <div style="margin-bottom: 8px; font-size: 0.82rem; color: var(--text-sub);">
               ※金額をクリックすると、該当月末までの累積対象仕訳が表示されます。
@@ -685,12 +692,11 @@
               <table id="trend-bs-table"></table>
             </div>
           </div>
-
         </div>
       </div>
     </div>
 
-    <!-- ================= 4. カレンダー ================= -->
+    <!-- 4. カレンダー -->
     <div id="view-calendar" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -720,7 +726,7 @@
       </div>
     </div>
 
-    <!-- ================= 5. 消込 ================= -->
+    <!-- 5. 消込 -->
     <div id="view-reconcile" class="view-section">
       <div class="card">
         <div class="card-header"><span>① カード引落情報の入力</span></div>
@@ -805,7 +811,7 @@
       </div>
     </div>
 
-    <!-- ================= 6. 予実管理 ================= -->
+    <!-- 6. 予実管理 -->
     <div id="view-budget" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -888,7 +894,7 @@
       </div>
     </div>
 
-    <!-- ================= 7. マスタ登録 (未決済科目設定対応) ================= -->
+    <!-- 7. マスタ登録 -->
     <div id="view-master" class="view-section">
       <div class="grid-2" style="margin-bottom: 20px;">
         <div class="card" style="margin: 0;">
@@ -992,7 +998,7 @@
       </div>
     </div>
 
-    <!-- ================= 8. データインポート ================= -->
+    <!-- 8. データインポート -->
     <div id="view-import" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -1075,13 +1081,13 @@
       </div>
       <form onsubmit="applyBulkEdit(event)">
         <div class="form-group">
-          <label class="form-label">品目を変更 (変更しない場合は未選択)</label>
+          <label class="form-label">品目を変更</label>
           <select id="bulk-edit-item" class="form-control">
             <option value="__KEEP__">-- 変更しない --</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">メモタグを変更 (変更しない場合は未選択)</label>
+          <label class="form-label">メモタグを変更</label>
           <select id="bulk-edit-tag" class="form-control">
             <option value="__KEEP__">-- 変更しない --</option>
           </select>
@@ -1096,12 +1102,39 @@
 
   <script>
     // ==========================================
-    // 認証 & マルチアカウント管理
+    // 0. Firebase設定
     // ==========================================
-    const AUTH_USERS_KEY = 'KAKEIBO_USERS_LIST';
-    const CURRENT_USER_KEY = 'KAKEIBO_LOGGED_IN_USER';
-    let currentUser = null;
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwh6-DsLAZ8jr8h7zEpfnBVwek4v-tP7U",
+      authDomain: "kakeibo-559f1.firebaseapp.com",
+      projectId: "kakeibo-559f1",
+      storageBucket: "kakeibo-559f1.firebasestorage.app",
+      messagingSenderId: "22754367705",
+      appId: "1:22754367705:web:b8c5a839891a942f0386c8",
+      measurementId: "G-3276M26X77"
+    };
+
+    let auth, db;
+    let isFirebaseAvailable = false;
+
+    try {
+      if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        isFirebaseAvailable = true;
+      }
+    } catch (e) {
+      console.warn("Firebase初期化エラー:", e);
+    }
+
+    // ==========================================
+    // ユーザー認証 & 同期管理
+    // ==========================================
+    let currentUserUid = null;
+    let currentUsername = null;
     let authMode = 'login';
+    let unsubscribeFirestore = null;
 
     const defaultInitialState = {
       accounts: [
@@ -1168,14 +1201,54 @@
       }
     }
 
-    function handleAuth(e) {
-      e.preventDefault();
-      const u = document.getElementById('auth-username').value.trim();
-      const p = document.getElementById('auth-password').value;
-      const errorMsg = document.getElementById('auth-error-msg');
+    function formatAuthEmail(input) {
+      return input.includes('@') ? input : `${input.toLowerCase()}@kakeibo.local`;
+    }
 
-      if (!u || !p) return;
-      const users = JSON.parse(localStorage.getItem(AUTH_USERS_KEY)) || [];
+    async function handleAuth(e) {
+      e.preventDefault();
+      const rawUser = document.getElementById('auth-username').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const errorMsg = document.getElementById('auth-error-msg');
+      const email = formatAuthEmail(rawUser);
+
+      errorMsg.style.display = 'none';
+
+      if (!isFirebaseAvailable) {
+        handleLocalStorageAuth(rawUser, password);
+        return;
+      }
+
+      try {
+        if (authMode === 'register') {
+          const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+          currentUserUid = userCredential.user.uid;
+          currentUsername = rawUser;
+
+          await db.collection('users').doc(currentUserUid).set({
+            username: rawUser,
+            appState: defaultInitialState,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } else {
+          const userCredential = await auth.signInWithEmailAndPassword(email, password);
+          currentUserUid = userCredential.user.uid;
+          currentUsername = rawUser;
+        }
+      } catch (err) {
+        console.error(err);
+        let msg = 'ログインに失敗しました。';
+        if (err.code === 'auth/email-already-in-use') msg = 'このアカウントIDは既に使用されています。';
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') msg = 'IDまたはパスワードが正しくありません。';
+        if (err.code === 'auth/weak-password') msg = 'パスワードは6文字以上で設定してください。';
+        errorMsg.textContent = msg;
+        errorMsg.style.display = 'block';
+      }
+    }
+
+    function handleLocalStorageAuth(u, p) {
+      const users = JSON.parse(localStorage.getItem('KAKEIBO_USERS_FALLBACK')) || [];
+      const errorMsg = document.getElementById('auth-error-msg');
 
       if (authMode === 'register') {
         if (users.some(x => x.username === u)) {
@@ -1184,9 +1257,9 @@
           return;
         }
         users.push({ username: u, password: p });
-        localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+        localStorage.setItem('KAKEIBO_USERS_FALLBACK', JSON.stringify(users));
         localStorage.setItem(`KAKEIBO_DATA_${u}`, JSON.stringify(defaultInitialState));
-        loginUser(u);
+        onLoginSuccess(u, u);
       } else {
         const found = users.find(x => x.username === u && x.password === p);
         if (!found) {
@@ -1194,27 +1267,62 @@
           errorMsg.style.display = 'block';
           return;
         }
-        loginUser(u);
+        onLoginSuccess(u, u);
       }
     }
 
-    function loginUser(username) {
-      currentUser = username;
-      localStorage.setItem(CURRENT_USER_KEY, username);
+    function onLoginSuccess(uid, username) {
+      currentUserUid = uid;
+      currentUsername = username;
       document.getElementById('current-user-display').textContent = username;
       document.getElementById('auth-screen').style.display = 'none';
 
-      loadState();
-      initEntryForm();
-      renderEntryFormMasterOptions();
-      renderJournalTable();
-      switchTab('entry');
+      if (isFirebaseAvailable) {
+        subscribeFirestoreData(uid);
+      } else {
+        document.getElementById('sync-status-indicator').textContent = '⚠️ ローカル保存中';
+        loadState();
+        refreshAllViews();
+      }
     }
 
-    function logout() {
+    function subscribeFirestoreData(uid) {
+      document.getElementById('sync-status-indicator').textContent = '☁️ 同期中...';
+
+      if (unsubscribeFirestore) unsubscribeFirestore();
+
+      unsubscribeFirestore = db.collection('users').doc(uid).onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data && data.appState) {
+            appState = data.appState;
+          }
+          if (data && data.username) {
+            currentUsername = data.username;
+            document.getElementById('current-user-display').textContent = currentUsername;
+          }
+        } else {
+          appState = JSON.parse(JSON.stringify(defaultInitialState));
+          saveState();
+        }
+        document.getElementById('sync-status-indicator').textContent = '☁️ クラウド同期完了';
+        refreshAllViews();
+      }, err => {
+        console.error("Firestore同期エラー:", err);
+        document.getElementById('sync-status-indicator').textContent = '⚠️ 同期エラー';
+      });
+    }
+
+    async function logout() {
       if (!confirm('ログアウトしますか？')) return;
-      currentUser = null;
-      localStorage.removeItem(CURRENT_USER_KEY);
+      if (unsubscribeFirestore) unsubscribeFirestore();
+
+      if (isFirebaseAvailable && auth) {
+        await auth.signOut();
+      }
+
+      currentUserUid = null;
+      currentUsername = null;
       document.getElementById('auth-username').value = '';
       document.getElementById('auth-password').value = '';
       document.getElementById('auth-error-msg').style.display = 'none';
@@ -1223,26 +1331,46 @@
     }
 
     function loadState() {
-      if (!currentUser) return;
-      const saved = localStorage.getItem(`KAKEIBO_DATA_${currentUser}`);
-      if (saved) {
-        try {
-          appState = JSON.parse(saved);
-        } catch (e) {
-          console.error(e);
+      if (!isFirebaseAvailable && currentUserUid) {
+        const saved = localStorage.getItem(`KAKEIBO_DATA_${currentUserUid}`);
+        if (saved) {
+          try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
         }
-      } else {
-        appState = JSON.parse(JSON.stringify(defaultInitialState));
       }
     }
 
-    function saveState() {
-      if (!currentUser) return;
-      localStorage.setItem(`KAKEIBO_DATA_${currentUser}`, JSON.stringify(appState));
+    async function saveState() {
+      if (isFirebaseAvailable && currentUserUid) {
+        document.getElementById('sync-status-indicator').textContent = '☁️ 保存中...';
+        try {
+          await db.collection('users').doc(currentUserUid).set({
+            username: currentUsername || 'ユーザー',
+            appState: appState,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+          document.getElementById('sync-status-indicator').textContent = '☁️ クラウド同期完了';
+        } catch (e) {
+          console.error("Firestore保存エラー:", e);
+          document.getElementById('sync-status-indicator').textContent = '⚠️ 保存失敗';
+        }
+      } else if (currentUserUid) {
+        localStorage.setItem(`KAKEIBO_DATA_${currentUserUid}`, JSON.stringify(appState));
+      }
+    }
+
+    function refreshAllViews() {
+      initEntryForm();
+      renderEntryFormMasterOptions();
+      renderJournalTable();
+      renderReports();
+      renderCalendar();
+      renderReconciliationView();
+      renderBudgetView();
+      renderMasterView();
     }
 
     // ==========================================
-    // タブ切替
+    // タブ切替 & 仕訳入力
     // ==========================================
     function switchTab(tabName) {
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -1263,7 +1391,6 @@
       if (tabName === 'master') renderMasterView();
     }
 
-    // 財務諸表 4サブタブ切替
     let currentReportSubTab = 'pl';
     function setReportSubTab(subTab) {
       currentReportSubTab = subTab;
@@ -1276,9 +1403,6 @@
       renderReports();
     }
 
-    // ==========================================
-    // 1. 仕訳入力 (未決済科目による自動判定)
-    // ==========================================
     function initEntryForm() {
       document.getElementById('debit-rows-container').innerHTML = '';
       document.getElementById('credit-rows-container').innerHTML = '';
@@ -1355,7 +1479,6 @@
         saveBtn.disabled = true;
       }
 
-      // 未決済自動判定プレビュー
       const debAccs = Array.from(document.querySelectorAll('.debit-account-select')).map(s => s.value);
       const crAccs = Array.from(document.querySelectorAll('.credit-account-select')).map(s => s.value);
       const allSelectedAccs = [...debAccs, ...crAccs];
@@ -1438,7 +1561,6 @@
         return;
       }
 
-      // 未決済自動判定: 借方または貸方に isUnsettled === true の勘定科目があれば settled = false
       const allAccNames = [...debits.map(d => d.account), ...credits.map(c => c.account)];
       const hasUnsettledAccount = allAccNames.some(accName => {
         const acc = appState.accounts.find(a => a.name === accName);
@@ -1487,7 +1609,7 @@
     }
 
     // ==========================================
-    // 2. 仕訳帳 (複数選択・全選択・一括操作)
+    // 仕訳帳
     // ==========================================
     function getFilteredJournals() {
       const dFrom = document.getElementById('filter-date-from').value;
@@ -1714,7 +1836,7 @@
     }
 
     // ==========================================
-    // 3. 財務諸表 (P/L符号計算 & 4タブ独立表示)
+    // 財務諸表 (B/S & P/L)
     // ==========================================
     function renderReports() {
       const monthStr = document.getElementById('report-month').value;
@@ -1727,31 +1849,20 @@
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
 
-      // P/L集計ロジック:
-      // 収益: 貸方を正(+)、借方を負(-)
-      // 費用: 借方を正(+)、貸方を負(-)
       const plExpenses = {};
       const plRevenues = {};
 
       appState.journals.forEach(j => {
         if (j.date >= startOfMonth && j.date <= endOfMonth) {
-          // 借方
           j.debits.forEach(d => {
             const type = accMap[d.account];
-            if (type === 'expense') {
-              plExpenses[d.account] = (plExpenses[d.account] || 0) + d.amount; // 費用加算
-            } else if (type === 'revenue') {
-              plRevenues[d.account] = (plRevenues[d.account] || 0) - d.amount; // 収益減算 (負)
-            }
+            if (type === 'expense') plExpenses[d.account] = (plExpenses[d.account] || 0) + d.amount;
+            else if (type === 'revenue') plRevenues[d.account] = (plRevenues[d.account] || 0) - d.amount;
           });
-          // 貸方
           j.credits.forEach(c => {
             const type = accMap[c.account];
-            if (type === 'revenue') {
-              plRevenues[c.account] = (plRevenues[c.account] || 0) + c.amount; // 収益加算
-            } else if (type === 'expense') {
-              plExpenses[c.account] = (plExpenses[c.account] || 0) - c.amount; // 費用減算 (負)
-            }
+            if (type === 'revenue') plRevenues[c.account] = (plRevenues[c.account] || 0) + c.amount;
+            else if (type === 'expense') plExpenses[c.account] = (plExpenses[c.account] || 0) - c.amount;
           });
         }
       });
@@ -1760,7 +1871,7 @@
       const totalExp = Object.values(plExpenses).reduce((s, v) => s + v, 0);
       const netIncome = totalRev - totalExp;
 
-      // ① 単月 P/L 描画
+      // ① 単月 P/L
       const plTbody = document.getElementById('pl-tbody');
       plTbody.innerHTML = `
         <tr style="background-color: #f8fafc; font-weight: 700;"><td colspan="2">【収益の部】</td></tr>
@@ -1777,7 +1888,7 @@
         </tr>
       `;
 
-      // ② 単月 B/S 集計 (累積)
+      // ② 単月 B/S
       const bsAssets = {};
       const bsLiabilities = {};
       const bsEquity = {};
@@ -1828,12 +1939,10 @@
         </tr>
       `;
 
-      // ③ 月次推移 P/L & ④ 月次推移 B/S 描画
       renderMonthlyTrendPL();
       renderMonthlyTrendBS();
     }
 
-    // ③ 月次推移 P/L 描画 (収益・費用)
     function renderMonthlyTrendPL() {
       const year = '2026';
       const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
@@ -1848,25 +1957,23 @@
       appState.journals.forEach(j => {
         if (j.date.startsWith(year + '-')) {
           const mIdx = parseInt(j.date.split('-')[1], 10) - 1;
-          // 借方
           j.debits.forEach(d => {
             const t = accMap[d.account];
             if (t === 'expense' && matrix[d.account]) {
               matrix[d.account].months[mIdx] += d.amount;
               matrix[d.account].total += d.amount;
             } else if (t === 'revenue' && matrix[d.account]) {
-              matrix[d.account].months[mIdx] -= d.amount; // 借方収益はマイナス
+              matrix[d.account].months[mIdx] -= d.amount;
               matrix[d.account].total -= d.amount;
             }
           });
-          // 貸方
           j.credits.forEach(c => {
             const t = accMap[c.account];
             if (t === 'revenue' && matrix[c.account]) {
               matrix[c.account].months[mIdx] += c.amount;
               matrix[c.account].total += c.amount;
             } else if (t === 'expense' && matrix[c.account]) {
-              matrix[c.account].months[mIdx] -= c.amount; // 貸方費用はマイナス
+              matrix[c.account].months[mIdx] -= c.amount;
               matrix[c.account].total -= c.amount;
             }
           });
@@ -1904,7 +2011,6 @@
       table.innerHTML = thead + tbody;
     }
 
-    // ④ 月次推移 B/S 描画 (資産・負債・純資産の各月末残高推移)
     function renderMonthlyTrendBS() {
       const year = '2026';
       const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
@@ -1917,7 +2023,6 @@
         matrix[a.name] = { type: a.type, months: Array(12).fill(0) };
       });
 
-      // 各月末時点の累積残高を計算
       months.forEach((m, mIdx) => {
         const monthEndStr = `${year}-${m}-${new Date(Number(year), Number(m), 0).getDate()}`;
         const balances = {};
@@ -2344,7 +2449,7 @@
           });
           j.credits.forEach(c => {
             if (analysisMap[c.account]) {
-              analysisMap[c.account].actual1To13 -= c.amount; // 貸方費用はマイナス
+              analysisMap[c.account].actual1To13 -= c.amount;
             }
           });
         }
@@ -2765,7 +2870,6 @@
         if (r.item && !appState.items.includes(r.item)) appState.items.push(r.item);
         if (r.tag && !appState.tags.includes(r.tag)) appState.tags.push(r.tag);
 
-        // 未決済判定
         const hasUnsettled = [r.debitAcc, r.creditAcc].some(accName => {
           const a = appState.accounts.find(x => x.name === accName);
           return a && a.isUnsettled;
@@ -2808,11 +2912,19 @@
       document.body.removeChild(link);
     }
 
-    // 初期化
+    // ==========================================
+    // 初期起動 & 認証状態監視
+    // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
-      const savedUser = localStorage.getItem(CURRENT_USER_KEY);
-      if (savedUser) {
-        loginUser(savedUser);
+      if (isFirebaseAvailable && auth) {
+        auth.onAuthStateChanged(user => {
+          if (user) {
+            const displayName = user.email.split('@')[0];
+            onLoginSuccess(user.uid, displayName);
+          } else {
+            document.getElementById('auth-screen').style.display = 'flex';
+          }
+        });
       } else {
         document.getElementById('auth-screen').style.display = 'flex';
       }
