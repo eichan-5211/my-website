@@ -592,7 +592,7 @@
             <div class="grid-3" style="margin-bottom: 12px;">
               <div class="form-group">
                 <label class="form-label">取引日 *</label>
-                <input type="date" id="entry-date" class="form-control" required value="2026-08-13">
+                <input type="date" id="entry-date" class="form-control" required>
               </div>
               <div class="form-group">
                 <label class="form-label">品目</label>
@@ -749,7 +749,7 @@
                   <input type="checkbox" id="journal-select-all" onchange="toggleSelectAllJournals(this.checked)">
                 </th>
                 <th style="width: 95px;">日付</th>
-                <th style="width: 80px;">状態</th>
+                <th style="width: 100px;">状態</th>
                 <th>借方勘定 / 金額</th>
                 <th>貸方勘定 / 金額</th>
                 <th style="width: 90px;">品目</th>
@@ -764,14 +764,14 @@
       </div>
     </div>
 
-    <!-- ================= 3. B/S・P/L (円グラフ・折れ線グラフ含む5タブ) ================= -->
+    <!-- ================= 3. B/S・P/L ================= -->
     <div id="view-reports" class="view-section">
       <div class="card">
         <div class="card-header">
           <span>財務諸表・グラフ分析レポート</span>
           <div style="display: flex; align-items: center; gap: 6px;">
             <label class="form-label" style="margin: 0; font-size: 0.8rem;">基準年月:</label>
-            <input type="month" id="report-month" class="form-control" style="width: 140px; padding: 4px 8px;" value="2026-08" onchange="renderReports()">
+            <input type="month" id="report-month" class="form-control" style="width: 140px; padding: 4px 8px;" onchange="renderReports()">
           </div>
         </div>
 
@@ -857,7 +857,7 @@
                   <select id="line-chart-target-select" class="form-control" onchange="renderLineChart()"></select>
                 </div>
                 <div style="display: flex; align-items: flex-end;">
-                  <span style="font-size: 0.8rem; color: var(--text-sub);">2026年 1月〜12月の推移を表示</span>
+                  <span style="font-size: 0.8rem; color: var(--text-sub);">年間の推移を表示</span>
                 </div>
               </div>
             </div>
@@ -877,12 +877,12 @@
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <select id="cal-year-select" class="form-control" style="width: 95px; padding: 4px 8px;" onchange="onCalendarSelectChange()">
               <option value="2025">2025年</option>
-              <option value="2026" selected>2026年</option>
+              <option value="2026">2026年</option>
               <option value="2027">2027年</option>
             </select>
             <select id="cal-month-select" class="form-control" style="width: 80px; padding: 4px 8px;" onchange="onCalendarSelectChange()">
               <option value="0">1月</option><option value="1">2月</option><option value="2">3月</option><option value="3">4月</option>
-              <option value="4">5月</option><option value="5">6月</option><option value="6">7月</option><option value="7" selected>8月</option>
+              <option value="4">5月</option><option value="5">6月</option><option value="6">7月</option><option value="7">8月</option>
               <option value="8">9月</option><option value="9">10月</option><option value="10">11月</option><option value="11">12月</option>
             </select>
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(-1)">前月</button>
@@ -937,7 +937,7 @@
           <div class="grid-4">
             <div class="form-group">
               <label class="form-label" id="lbl-rec-date">決済日 *</label>
-              <input type="date" id="rec-date" class="form-control" value="2026-08-27">
+              <input type="date" id="rec-date" class="form-control">
             </div>
             <div class="form-group">
               <label class="form-label">確定金額 (円) *</label>
@@ -1042,7 +1042,6 @@
 
     <!-- ================= 6. 予実管理 ================= -->
     <div id="view-budget" class="view-section">
-      <!-- 固定費設定カード -->
       <div class="card">
         <div class="card-header">
           <span>固定費の月額設定 (経過日に関わらず全額を算入)</span>
@@ -1062,7 +1061,6 @@
         </div>
       </div>
 
-      <!-- 変動費 着地予想サマリー -->
       <div class="card">
         <div class="card-header">
           <span>費用 予実分析 & 着地予想 (固定費 ＋ 変動費)</span>
@@ -1092,7 +1090,6 @@
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <span style="font-weight: 700; font-size: 0.88rem;">科目別 着地予想内訳</span>
-              <button class="btn btn-outline btn-sm" onclick="toggleBudgetBreakdown()" id="btn-toggle-budget">内訳を閉じる</button>
             </div>
             <div id="budget-breakdown-container" class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
               <table>
@@ -1114,24 +1111,22 @@
         </div>
       </div>
 
-      <!-- 変動費 カレンダー設定 -->
       <div class="card">
         <div class="card-header">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span>② 変動費 日別予算カレンダー</span>
             <select id="budget-year-select" class="form-control" style="width: 90px; padding: 4px 6px;" onchange="onBudgetCalendarSelectChange()">
               <option value="2025">2025年</option>
-              <option value="2026" selected>2026年</option>
+              <option value="2026">2026年</option>
               <option value="2027">2027年</option>
             </select>
             <select id="budget-month-select" class="form-control" style="width: 75px; padding: 4px 6px;" onchange="onBudgetCalendarSelectChange()">
               <option value="0">1月</option><option value="1">2月</option><option value="2">3月</option><option value="3">4月</option>
-              <option value="4">5月</option><option value="5">6月</option><option value="6">7月</option><option value="7" selected>8月</option>
+              <option value="4">5月</option><option value="5">6月</option><option value="6">7月</option><option value="7">8月</option>
               <option value="8">9月</option><option value="9">10月</option><option value="10">11月</option><option value="11">12月</option>
             </select>
             <button class="btn btn-outline btn-sm" onclick="changeBudgetMonth(-1)">前月</button>
             <button class="btn btn-outline btn-sm" onclick="changeBudgetMonth(1)">翌月</button>
-            <span id="gcal-sync-badge-budget" class="badge badge-gcal" style="display: none;">連携中</span>
           </div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button class="btn btn-subtle btn-sm" onclick="syncGoogleCalendarEvents(currentBudgetCalDate)">表示月の予定を同期</button>
@@ -1275,6 +1270,20 @@
     </div>
   </main>
 
+  <!-- 消込紐付け詳細モーダル -->
+  <div id="reconciliation-detail-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 650px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <span style="font-weight: 700; font-size: 1rem; color: var(--freee-blue);">消込決済の詳細・口座対応</span>
+        <button class="btn btn-outline btn-sm" onclick="closeReconcileModal()">✕</button>
+      </div>
+      <div id="rec-modal-content"></div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button type="button" class="btn btn-outline" onclick="closeReconcileModal()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Google Calendar イベント編集モーダル -->
   <div id="gcal-edit-modal" class="modal-overlay">
     <div class="modal-box" style="max-width: 400px;">
@@ -1298,9 +1307,6 @@
   </div>
 
   <script>
-    // ==========================================
-    // 0. Firebase設定
-    // ==========================================
     const firebaseConfig = {
       apiKey: "AIzaSyAwh6-DsLAZ8jr8h7zEpfnBVwek4v-tP7U",
       authDomain: "kakeibo-559f1.firebaseapp.com",
@@ -1326,35 +1332,16 @@
       console.warn("Firebase初期化エラー:", e);
     }
 
-    // ==========================================
-    // ユーザー認証 & 同期管理
-    // ==========================================
     let currentUserUid = null;
     let currentUsername = null;
     let authMode = 'login';
     let unsubscribeFirestore = null;
 
-    // デモデータを全廃した完全初期状態
+    // デモデータを完全排除したクリーンな初期状態
     const defaultInitialState = {
-      accounts: [
-        { id: 'acc-1', name: '現金', type: 'asset', isUnsettled: false },
-        { id: 'acc-2', name: '普通預金', type: 'asset', isUnsettled: false },
-        { id: 'acc-3', name: '売掛金', type: 'asset', isUnsettled: true },
-        { id: 'acc-4', name: 'クレジットカード未払金', type: 'liability', isUnsettled: true },
-        { id: 'acc-5', name: '買掛金', type: 'liability', isUnsettled: true },
-        { id: 'acc-6', name: '元入金', type: 'equity', isUnsettled: false },
-        { id: 'acc-7', name: '給与収入', type: 'revenue', isUnsettled: false },
-        { id: 'acc-8', name: '事業売上', type: 'revenue', isUnsettled: false },
-        { id: 'acc-9', name: '食費', type: 'expense', isUnsettled: false },
-        { id: 'acc-10', name: '日用品費', type: 'expense', isUnsettled: false },
-        { id: 'acc-11', name: '交通費', type: 'expense', isUnsettled: false },
-        { id: 'acc-12', name: '住居費', type: 'expense', isUnsettled: false },
-        { id: 'acc-13', name: '水道光熱費', type: 'expense', isUnsettled: false },
-        { id: 'acc-14', name: '通信費', type: 'expense', isUnsettled: false },
-        { id: 'acc-15', name: '交際費', type: 'expense', isUnsettled: false }
-      ],
-      items: ['外食', 'スーパー', '電車代', 'タクシー', '家賃', '電気代', 'ガス代', 'スマホ代', '書籍'],
-      tags: ['固定費', '変動費', 'プライベート', '仕事', 'カード決済'],
+      accounts: [],
+      items: [],
+      tags: [],
       templates: [],
       journals: [],
       budgets: [],
@@ -1412,6 +1399,7 @@
       }
     }
 
+    // Googleカレンダー同期（デモデータ混入を防ぎ、カレンダーAPIから取得したデータのみに統一）
     async function syncGoogleCalendarEvents(targetDate = currentCalDate) {
       if (!googleAccessToken) {
         googleAccessToken = sessionStorage.getItem('GOOGLE_ACCESS_TOKEN');
@@ -1453,6 +1441,7 @@
         if (!res.ok) throw new Error("API request failed");
         const data = await res.json();
 
+        // 既存の古い予定・デモ予定を完全クリアしてAPIデータのみを登録
         const eventsMap = {};
         if (data.items) {
           data.items.forEach(item => {
@@ -1470,13 +1459,12 @@
         renderBudgetView();
         renderCalendar();
         document.getElementById('sync-status-indicator').textContent = 'クラウド同期完了';
-        alert(`${y}年${m+1}月の予定をGoogleカレンダーから取得しました。`);
+        alert(`${y}年${m+1}月の予定をGoogleカレンダーから同期しました。`);
       } catch (err) {
         console.warn("Googleカレンダー取得エラー:", err);
       }
     }
 
-    // Googleカレンダー予定編集・削除
     function openGCalEditModal(id, summary) {
       document.getElementById('gcal-edit-id').value = id;
       document.getElementById('gcal-edit-summary').value = summary;
@@ -1533,7 +1521,6 @@
         }
       } catch(e) { console.error(e); }
     }
-
 
     function formatAuthEmail(input) {
       return input.includes('@') ? input : `${input.toLowerCase()}@kakeibo.local`;
@@ -1610,6 +1597,18 @@
       currentUsername = username;
       document.getElementById('current-user-display').textContent = username;
       document.getElementById('auth-screen').style.display = 'none';
+
+      const now = new Date();
+      const yStr = now.getFullYear();
+      const mStr = String(now.getMonth() + 1).padStart(2, '0');
+      const dStr = String(now.getDate()).padStart(2, '0');
+      document.getElementById('entry-date').value = `${yStr}-${mStr}-${dStr}`;
+      document.getElementById('rec-date').value = `${yStr}-${mStr}-${dStr}`;
+      document.getElementById('report-month').value = `${yStr}-${mStr}`;
+      document.getElementById('cal-year-select').value = yStr;
+      document.getElementById('cal-month-select').value = now.getMonth();
+      document.getElementById('budget-year-select').value = yStr;
+      document.getElementById('budget-month-select').value = now.getMonth();
 
       if (isFirebaseAvailable) {
         subscribeFirestoreData(uid);
@@ -1711,9 +1710,6 @@
       renderMasterView();
     }
 
-    // ==========================================
-    // タブ切替 & 仕訳入力
-    // ==========================================
     function switchTab(tabName) {
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -1921,7 +1917,7 @@
           target.settled = settled;
           target.note = note;
         }
-        alert('仕訳を更新しました。続けて入力できます。');
+        alert('仕訳を更新しました。');
       } else {
         appState.journals.unshift({
           id: 'j-' + Date.now(),
@@ -1934,7 +1930,7 @@
           note,
           reconciliationId: null
         });
-        alert(`仕訳を登録しました。（判定: ${settled ? '決済済み' : '未決済'}）\n続けて入力できます。`);
+        alert(`仕訳を登録しました。（判定: ${settled ? '決済済み' : '未決済'}）`);
       }
 
       saveState();
@@ -1952,9 +1948,6 @@
       document.getElementById('btn-save-journal').textContent = '仕訳を登録する';
     }
 
-    // ==========================================
-    // 仕訳帳
-    // ==========================================
     function getFilteredJournals() {
       const dFrom = document.getElementById('filter-date-from').value;
       const dTo = document.getElementById('filter-date-to').value;
@@ -2039,9 +2032,16 @@
         const debitHtml = j.debits.map(d => `<div><strong>${d.account}</strong>: ¥${d.amount.toLocaleString()}</div>`).join('');
         const creditHtml = j.credits.map(c => `<div><strong>${c.account}</strong>: ¥${c.amount.toLocaleString()}</div>`).join('');
 
-        let badgeHtml = j.settled 
-          ? `<span class="badge badge-settled" ${j.reconciliationId ? `onclick="showReconciliationDetail('${j.reconciliationId}')" style="cursor:pointer;" title="消込紐付け"` : ''}>決済済 ${j.reconciliationId ? '[消込済]' : ''}</span>`
-          : `<span class="badge badge-unsettled">未決済</span>`;
+        let badgeHtml = '';
+        if (j.settled) {
+          if (j.reconciliationId) {
+            badgeHtml = `<span class="badge badge-settled" style="cursor: pointer; text-decoration: underline;" onclick="showReconciliationDetail('${j.reconciliationId}')" title="消込詳細・口座対応を表示">決済済 [消込済] 🔍</span>`;
+          } else {
+            badgeHtml = `<span class="badge badge-settled">決済済</span>`;
+          }
+        } else {
+          badgeHtml = `<span class="badge badge-unsettled">未決済</span>`;
+        }
 
         tr.innerHTML = `
           <td style="text-align: center;">
@@ -2113,43 +2113,6 @@
       renderJournalTable();
     }
 
-    function openBulkEditModal() {
-      const itemSelect = document.getElementById('bulk-edit-item');
-      itemSelect.innerHTML = '<option value="__KEEP__">-- 変更しない --</option><option value="">(品目をクリア)</option>' +
-        appState.items.map(i => `<option value="${i}">${i}</option>`).join('');
-
-      const tagSelect = document.getElementById('bulk-edit-tag');
-      tagSelect.innerHTML = '<option value="__KEEP__">-- 変更しない --</option><option value="">(タグをクリア)</option>' +
-        appState.tags.map(t => `<option value="${t}">${t}</option>`).join('');
-
-      document.getElementById('bulk-edit-modal').classList.add('active');
-    }
-
-    function closeBulkEditModal() {
-      document.getElementById('bulk-edit-modal').classList.remove('active');
-    }
-
-    function applyBulkEdit(e) {
-      e.preventDefault();
-      const currentList = getFilteredJournals();
-      const targetIds = currentList.filter(j => selectedJournalIds.has(j.id)).map(j => j.id);
-
-      const newItem = document.getElementById('bulk-edit-item').value;
-      const newTag = document.getElementById('bulk-edit-tag').value;
-
-      appState.journals.forEach(j => {
-        if (targetIds.includes(j.id)) {
-          if (newItem !== '__KEEP__') j.item = newItem;
-          if (newTag !== '__KEEP__') j.tag = newTag;
-        }
-      });
-
-      saveState();
-      closeBulkEditModal();
-      renderJournalTable();
-      alert(`選択した ${targetIds.length} 件の仕訳を一括更新しました。`);
-    }
-
     function resetJournalFilters() {
       document.getElementById('filter-date-from').value = '';
       document.getElementById('filter-date-to').value = '';
@@ -2194,9 +2157,82 @@
       renderJournalTable();
     }
 
-    // ==========================================
-    // 4. 財務諸表 (B/S & P/L)
-    // ==========================================
+    // 消込紐付け詳細モーダル表示
+    function showReconciliationDetail(recId) {
+      const relatedJournals = appState.journals.filter(j => j.reconciliationId === recId);
+      const modal = document.getElementById('reconciliation-detail-modal');
+      const content = document.getElementById('rec-modal-content');
+
+      const settleJournal = relatedJournals.find(j => j.tag === '消込決済');
+      const originalJournals = relatedJournals.filter(j => j.tag !== '消込決済');
+
+      let bankInfoHtml = '';
+      if (settleJournal) {
+        const totalSettledAmt = settleJournal.debits.reduce((s, x) => s + x.amount, 0);
+        const debAccs = settleJournal.debits.map(d => d.account).join(', ');
+        const crAccs = settleJournal.credits.map(c => c.account).join(', ');
+
+        bankInfoHtml = `
+          <div style="background-color: var(--freee-blue-subtle); border: 1px solid #bfe0ff; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px;">
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; color: var(--freee-blue);">【対応口座の入出金情報】</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 0.88rem;">
+              <div><strong>決済日:</strong> ${settleJournal.date}</div>
+              <div><strong>決済総額:</strong> ¥${totalSettledAmt.toLocaleString()}</div>
+              <div><strong>仕訳:</strong> ${debAccs} / ${crAccs}</div>
+            </div>
+            <div style="margin-top: 6px; font-size: 0.8rem; color: var(--text-sub);">
+              ※ この決済口座の入金または出金取引によって、以下の仕訳が決済済みとして消し込まれました。
+            </div>
+          </div>
+        `;
+      }
+
+      let originalListHtml = `
+        <div style="font-weight: 700; font-size: 0.88rem; margin-bottom: 6px;">消込対象となった取引明細 (${originalJournals.length}件):</div>
+        <div class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <table>
+            <thead>
+              <tr>
+                <th>発生日</th>
+                <th>借方勘定</th>
+                <th>貸方勘定</th>
+                <th style="text-align: right;">金額</th>
+                <th>品目</th>
+                <th>備考</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      if (originalJournals.length === 0) {
+        originalListHtml += `<tr><td colspan="6" style="text-align:center; padding:12px; color:var(--text-sub);">対象取引がありません</td></tr>`;
+      } else {
+        originalJournals.forEach(j => {
+          const amt = j.debits.reduce((s, x) => s + x.amount, 0);
+          originalListHtml += `
+            <tr>
+              <td style="font-weight: 600;">${j.date}</td>
+              <td>${j.debits.map(d=>d.account).join(', ')}</td>
+              <td>${j.credits.map(c=>c.account).join(', ')}</td>
+              <td style="text-align: right; font-weight: 700;">¥${amt.toLocaleString()}</td>
+              <td>${j.item ? `<span class="badge badge-item">${j.item}</span>` : '-'}</td>
+              <td style="color: var(--text-sub);">${j.note || '-'}</td>
+            </tr>
+          `;
+        });
+      }
+
+      originalListHtml += `</tbody></table></div>`;
+
+      content.innerHTML = bankInfoHtml + originalListHtml;
+      modal.classList.add('active');
+    }
+
+    function closeReconcileModal() {
+      document.getElementById('reconciliation-detail-modal').classList.remove('active');
+    }
+
+    // 財務諸表レポート
     function renderReports() {
       const monthStr = document.getElementById('report-month').value;
       if (!monthStr) return;
@@ -2230,7 +2266,6 @@
       const totalExp = Object.values(plExpenses).reduce((s, v) => s + v, 0);
       const netIncome = totalRev - totalExp;
 
-      // ① 単月 P/L 表
       const plTbody = document.getElementById('pl-tbody');
       plTbody.innerHTML = `
         <tr style="background-color: #f8fafc; font-weight: 700;"><td colspan="2">【収益の部】</td></tr>
@@ -2249,7 +2284,6 @@
 
       renderPLPieChart(plExpenses);
 
-      // ② 単月 B/S
       const bsAssets = {};
       const bsLiabilities = {};
       const bsEquity = {};
@@ -2396,6 +2430,7 @@
       appState.accounts.forEach(a => accMap[a.name] = a.type);
 
       let datasets = [];
+      const currentYear = new Date().getFullYear();
 
       if (type === 'summary_total') {
         const revs = Array(12).fill(0);
@@ -2404,11 +2439,9 @@
         const assets = Array(12).fill(0);
         const liabs = Array(12).fill(0);
 
-        const targetYear = new Date().getFullYear(); // 直近1年にするなどのロジックも可能ですが今回は2026年想定でシンプルに
-
         for (let m = 1; m <= 12; m++) {
-          const mStr = `2026-${String(m).padStart(2, '0')}`;
-          const mEnd = `${mStr}-${new Date(2026, m, 0).getDate()}`;
+          const mStr = `${currentYear}-${String(m).padStart(2, '0')}`;
+          const mEnd = `${mStr}-${new Date(currentYear, m, 0).getDate()}`;
 
           appState.journals.forEach(j => {
             if (j.date.startsWith(mStr)) {
@@ -2455,8 +2488,8 @@
         const amounts = Array(12).fill(0);
 
         for (let m = 1; m <= 12; m++) {
-          const mStr = `2026-${String(m).padStart(2, '0')}`;
-          const mEnd = `${mStr}-${new Date(2026, m, 0).getDate()}`;
+          const mStr = `${currentYear}-${String(m).padStart(2, '0')}`;
+          const mEnd = `${mStr}-${new Date(currentYear, m, 0).getDate()}`;
 
           if (accType === 'revenue' || accType === 'expense') {
             appState.journals.forEach(j => {
@@ -2491,7 +2524,7 @@
         const amounts = Array(12).fill(0);
 
         for (let m = 1; m <= 12; m++) {
-          const mStr = `2026-${String(m).padStart(2, '0')}`;
+          const mStr = `${currentYear}-${String(m).padStart(2, '0')}`;
           appState.journals.forEach(j => {
             if (j.date.startsWith(mStr) && j.item === itemName) {
               const sum = j.debits.reduce((s, d) => s + d.amount, 0);
@@ -2531,7 +2564,7 @@
     }
 
     function renderMonthlyTrendPL() {
-      const year = '2026';
+      const year = String(new Date().getFullYear());
       const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
@@ -2582,15 +2615,14 @@
 
         catAccs.forEach(([accName, data]) => {
           tbody += `<tr><td style="font-weight: 600;">${accName}</td>`;
-          data.months.forEach((amt, mIdx) => {
-            const monthStr = `2026-${String(mIdx + 1).padStart(2, '0')}`;
+          data.months.forEach((amt) => {
             if (amt !== 0) {
-              tbody += `<td style="text-align: right;"><span class="clickable-amount" onclick="openTrendDrilldown('${accName}', '${monthStr}')">¥${amt.toLocaleString()}</span></td>`;
+              tbody += `<td style="text-align: right;">¥${amt.toLocaleString()}</td>`;
             } else {
               tbody += `<td style="text-align: right; color: #cbd5e1;">-</td>`;
             }
           });
-          tbody += `<td style="text-align: right; background-color: var(--freee-blue-subtle);"><span class="clickable-amount" onclick="openTrendDrilldown('${accName}', 'ALL')">¥${data.total.toLocaleString()}</span></td></tr>`;
+          tbody += `<td style="text-align: right; background-color: var(--freee-blue-subtle);">¥${data.total.toLocaleString()}</td></tr>`;
         });
       });
 
@@ -2599,7 +2631,7 @@
     }
 
     function renderMonthlyTrendBS() {
-      const year = '2026';
+      const year = String(new Date().getFullYear());
       const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
@@ -2650,10 +2682,9 @@
 
         catAccs.forEach(([accName, data]) => {
           tbody += `<tr><td style="font-weight: 600;">${accName}</td>`;
-          data.months.forEach((amt, mIdx) => {
-            const monthStr = `2026-${String(mIdx + 1).padStart(2, '0')}`;
+          data.months.forEach((amt) => {
             if (amt !== 0) {
-              tbody += `<td style="text-align: right;"><span class="clickable-amount" onclick="openTrendDrilldown('${accName}', '${monthStr}')">¥${amt.toLocaleString()}</span></td>`;
+              tbody += `<td style="text-align: right;">¥${amt.toLocaleString()}</td>`;
             } else {
               tbody += `<td style="text-align: right; color: #cbd5e1;">-</td>`;
             }
@@ -2666,55 +2697,7 @@
       table.innerHTML = thead + tbody;
     }
 
-    function openTrendDrilldown(accName, monthStr) {
-      const modal = document.getElementById('trend-drilldown-modal');
-      const title = document.getElementById('drilldown-modal-title');
-      const tbody = document.getElementById('drilldown-modal-tbody');
-
-      const periodLabel = monthStr === 'ALL' ? '2026年 年間' : `${monthStr}`;
-      title.textContent = `【${periodLabel}】「${accName}」の仕訳明細一覧`;
-
-      const matched = appState.journals.filter(j => {
-        if (monthStr !== 'ALL' && !j.date.startsWith(monthStr)) return false;
-        if (monthStr === 'ALL' && !j.date.startsWith('2026-')) return false;
-
-        const hasDebit = j.debits.some(d => d.account === accName);
-        const hasCredit = j.credits.some(c => c.account === accName);
-        return hasDebit || hasCredit;
-      });
-
-      tbody.innerHTML = '';
-      if (matched.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-sub);">該当する仕訳はありません</td></tr>`;
-      } else {
-        matched.forEach(j => {
-          const debHtml = j.debits.map(d => `<div ${d.account === accName ? 'style="font-weight:700; color:var(--freee-blue);"' : ''}>${d.account}: ¥${d.amount.toLocaleString()}</div>`).join('');
-          const crHtml = j.credits.map(c => `<div ${c.account === accName ? 'style="font-weight:700; color:var(--freee-blue);"' : ''}>${c.account}: ¥${c.amount.toLocaleString()}</div>`).join('');
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="font-weight: 600;">${j.date}</td>
-            <td>${debHtml}</td>
-            <td>${crHtml}</td>
-            <td>${j.item ? `<span class="badge badge-item">${j.item}</span>` : '-'}</td>
-            <td>${j.tag ? `<span class="badge badge-tag">${j.tag}</span>` : '-'}</td>
-            <td style="color: var(--text-sub);">${j.note || '-'}</td>
-            <td>${j.settled ? '<span class="badge badge-settled">決済済</span>' : '<span class="badge badge-unsettled">未決済</span>'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
-
-      modal.classList.add('active');
-    }
-
-    function closeDrilldownModal() {
-      document.getElementById('trend-drilldown-modal').classList.remove('active');
-    }
-
-    // ==========================================
-    // 4. カレンダー (年・月選択 & 前月・翌月 & 選択月の同期)
-    // ==========================================
+    // カレンダー表示
     function onCalendarSelectChange() {
       const year = parseInt(document.getElementById('cal-year-select').value, 10);
       const month = parseInt(document.getElementById('cal-month-select').value, 10);
@@ -2756,7 +2739,6 @@
 
       const mStrKey = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-      // 実績集計
       const dailyTotals = {};
       appState.journals.forEach(j => {
         if (j.date.startsWith(mStrKey)) {
@@ -2772,7 +2754,6 @@
         }
       });
 
-      // 当初予算集計マップ
       const budgetMap = {};
       appState.budgets.forEach(b => {
         if (b.date.startsWith(mStrKey)) {
@@ -2881,12 +2862,10 @@
       panel.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // ==========================================
-    // 5. 消込
-    // ==========================================
+    // 消込機能
     function renderReconciliationView() {
       const bankSelect = document.getElementById('rec-bank-account');
-      bankSelect.innerHTML = appState.accounts.filter(a => a.type === 'asset').map(a => `<option value="${a.name}" ${a.name==='普通預金'?'selected':''}>${a.name}</option>`).join('');
+      bankSelect.innerHTML = appState.accounts.filter(a => a.type === 'asset').map(a => `<option value="${a.name}">${a.name}</option>`).join('');
 
       const cardSelect = document.getElementById('rec-card-account');
       cardSelect.innerHTML = appState.accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
@@ -3067,43 +3046,13 @@
       });
 
       saveState();
-      alert(`消込が完了しました。\n仕訳 (¥${targetAmt.toLocaleString()}) を記帳し、対象取引を決済済みに変更しました。`);
+      alert(`消込が完了しました。\n決済仕訳 (¥${targetAmt.toLocaleString()}) を記帳し、対象取引を決済済みに変更しました。`);
 
       document.getElementById('rec-target-amount').value = '';
       renderReconciliationView();
     }
 
-    function showReconciliationDetail(recId) {
-      const relatedJournals = appState.journals.filter(j => j.reconciliationId === recId);
-      const modal = document.getElementById('reconciliation-detail-modal');
-      const content = document.getElementById('rec-modal-content');
-
-      let html = `<p style="margin-bottom: 12px; font-weight: 600;">消込番号: ${recId}</p>`;
-      html += `<div class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);"><table><thead><tr><th>日付</th><th>借方</th><th>貸方</th><th>金額</th><th>備考</th></tr></thead><tbody>`;
-
-      relatedJournals.forEach(j => {
-        const amt = j.debits.reduce((s, x) => s + x.amount, 0);
-        html += `<tr>
-          <td style="font-weight: 600;">${j.date}</td>
-          <td>${j.debits.map(d=>d.account).join(', ')}</td>
-          <td>${j.credits.map(c=>c.account).join(', ')}</td>
-          <td style="text-align: right; font-weight: 700;">¥${amt.toLocaleString()}</td>
-          <td style="color: var(--text-sub);">${j.note || '-'}</td>
-        </tr>`;
-      });
-
-      html += `</tbody></table></div>`;
-      content.innerHTML = html;
-      modal.classList.add('active');
-    }
-
-    function closeReconcileModal() {
-      document.getElementById('reconciliation-detail-modal').classList.remove('active');
-    }
-
-    // ==========================================
-    // 6. 予実管理 (年・月選択対応 ＆ 固定費変動費分離)
-    // ==========================================
+    // 予実管理
     function onBudgetCalendarSelectChange() {
       const year = parseInt(document.getElementById('budget-year-select').value, 10);
       const month = parseInt(document.getElementById('budget-month-select').value, 10);
@@ -3202,7 +3151,6 @@
         };
       });
 
-      // 固定費の算入 (月額全額)
       if (appState.fixedCosts) {
         appState.fixedCosts.forEach(fc => {
           if (analysisMap[fc.account]) {
@@ -3212,7 +3160,6 @@
         });
       }
 
-      // 変動費（カレンダー予算）の算入
       appState.budgets.forEach(b => {
         if (b.date.startsWith(mStrKey) && analysisMap[b.account]) {
           analysisMap[b.account].totalBudget += b.amount;
@@ -3220,7 +3167,6 @@
         }
       });
 
-      // 実績 (選択月)
       appState.journals.forEach(j => {
         if (j.date >= startOfMonth && j.date <= endOfMonth) {
           j.debits.forEach(d => {
@@ -3356,7 +3302,6 @@
         cell.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span class="cal-date-num">${day}日</span>
-            <button type="button" onclick="event.stopPropagation(); openBudgetDayEditModal('${dateStr}')" style="font-size:0.68rem; background:none; border:none; color:var(--freee-blue); cursor:pointer; padding:0 2px;">編集</button>
           </div>
           ${badgesHtml}
         `;
@@ -3430,123 +3375,7 @@
       renderCalendar();
     }
 
-    function openBudgetDayEditModal(dateStr) {
-      const modal = document.getElementById('budget-day-edit-modal');
-      const title = document.getElementById('budget-day-modal-title');
-      const tbody = document.getElementById('budget-day-modal-tbody');
-      const gcalInfo = document.getElementById('budget-day-gcal-info');
-      const gcalText = document.getElementById('budget-day-gcal-text');
-
-      title.textContent = `【${dateStr}】の変動費予算設定 & 編集`;
-      document.getElementById('direct-budget-date').value = dateStr;
-
-      if (appState.googleCalendarEvents && appState.googleCalendarEvents[dateStr]) {
-        gcalText.innerHTML = appState.googleCalendarEvents[dateStr].map(evt => 
-          `<span style="cursor:pointer; text-decoration:underline;" onclick="openGCalEditModal('${evt.id}', '${evt.summary}')">${evt.summary}</span>`
-        ).join(' / ');
-        gcalInfo.style.display = 'block';
-      } else {
-        gcalInfo.style.display = 'none';
-      }
-
-      const accSelect = document.getElementById('direct-budget-acc');
-      accSelect.innerHTML = appState.accounts.filter(a => a.type === 'expense').map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-
-      renderBudgetDayModalTable(dateStr);
-      resetDirectBudgetForm();
-
-      modal.classList.add('active');
-    }
-
-    function renderBudgetDayModalTable(dateStr) {
-      const tbody = document.getElementById('budget-day-modal-tbody');
-      const dayBudgets = appState.budgets.filter(b => b.date === dateStr);
-
-      tbody.innerHTML = '';
-      if (dayBudgets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:16px; color:var(--text-sub);">設定された変動費予算はありません</td></tr>`;
-      } else {
-        dayBudgets.forEach(b => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${b.account}</strong></td>
-            <td style="font-weight:600;">¥${b.amount.toLocaleString()}</td>
-            <td style="text-align:center; white-space:nowrap;">
-              <button type="button" class="btn btn-outline btn-sm" onclick="editDirectBudget('${b.id}')">編集</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="deleteDirectBudget('${b.id}')" style="color:#cf1322;">削除</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
-    }
-
-    function editDirectBudget(budgetId) {
-      const b = appState.budgets.find(x => x.id === budgetId);
-      if (!b) return;
-
-      document.getElementById('direct-budget-id').value = b.id;
-      document.getElementById('direct-budget-acc').value = b.account;
-      document.getElementById('direct-budget-amt').value = b.amount;
-      document.getElementById('direct-budget-form-label').textContent = '選択中の予算を修正';
-      document.getElementById('btn-save-direct-budget').textContent = '更新する';
-    }
-
-    function deleteDirectBudget(budgetId) {
-      const dateStr = document.getElementById('direct-budget-date').value;
-      appState.budgets = appState.budgets.filter(b => b.id !== budgetId);
-      saveState();
-      renderBudgetDayModalTable(dateStr);
-      renderBudgetView();
-      renderCalendar();
-    }
-
-    function resetDirectBudgetForm() {
-      document.getElementById('direct-budget-id').value = '';
-      document.getElementById('direct-budget-amt').value = '';
-      document.getElementById('direct-budget-form-label').textContent = 'この日に予算を追加';
-      document.getElementById('btn-save-direct-budget').textContent = '保存';
-    }
-
-    function saveDirectBudget(e) {
-      e.preventDefault();
-      const dateStr = document.getElementById('direct-budget-date').value;
-      const editId = document.getElementById('direct-budget-id').value;
-      const account = document.getElementById('direct-budget-acc').value;
-      const amount = Number(document.getElementById('direct-budget-amt').value);
-
-      if (!account || amount <= 0) return;
-
-      if (editId) {
-        const target = appState.budgets.find(b => b.id === editId);
-        if (target) {
-          target.account = account;
-          target.amount = amount;
-        }
-      } else {
-        appState.budgets = appState.budgets.filter(b => !(b.date === dateStr && b.account === account));
-        appState.budgets.push({
-          id: 'b-' + Date.now() + Math.random().toString(36).substr(2, 4),
-          date: dateStr,
-          account,
-          amount
-        });
-      }
-
-      saveState();
-      renderBudgetDayModalTable(dateStr);
-      resetDirectBudgetForm();
-      renderBudgetView();
-      renderCalendar();
-    }
-
-    function closeBudgetDayModal() {
-      document.getElementById('budget-day-edit-modal').classList.remove('active');
-    }
-
-    // ==========================================
-    // マスタ設定
-    // ==========================================
+    // マスタ管理
     function renderMasterView() {
       const accTbody = document.getElementById('m-acc-tbody');
       const typeLabel = { asset:'資産', liability:'負債', equity:'純資産', revenue:'収益', expense:'費用' };
@@ -3649,7 +3478,7 @@
           if (t.creditAcc === oldName) t.creditAcc = newName;
         });
 
-        alert(`勘定科目「${oldName}」を「${newName}」に変更し、関連する仕訳や予算も一括更新しました。`);
+        alert(`勘定科目「${oldName}」を「${newName}」に変更しました。`);
       } else {
         if (appState.accounts.some(a => a.name === newName)) {
           alert('同名の勘定科目が既に存在します。');
@@ -3845,160 +3674,6 @@
       renderEntryFormMasterOptions();
     }
 
-    // ==========================================
-    // データインポート
-    // ==========================================
-    let parsedImportRows = [];
-
-    function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      document.getElementById('import-file-name').textContent = `選択ファイル: ${file.name}`;
-      const reader = new FileReader();
-
-      reader.onload = function(evt) {
-        try {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-          processImportData(jsonRows);
-        } catch (err) {
-          console.error(err);
-          alert('ファイルの読み込みに失敗しました。');
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
-
-    function processImportData(rows) {
-      parsedImportRows = [];
-      let startIndex = 0;
-      if (rows.length > 0 && isNaN(Date.parse(rows[0][0]))) {
-        startIndex = 1;
-      }
-
-      for (let i = startIndex; i < rows.length; i++) {
-        const r = rows[i];
-        if (!r || r.length < 5) continue;
-
-        let dateStr = r[0];
-        if (typeof dateStr === 'number') {
-          const jsDate = new Date((dateStr - (25567 + 2)) * 86400 * 1000);
-          dateStr = jsDate.toISOString().split('T')[0];
-        }
-
-        const debitAcc = String(r[1] || '').trim();
-        const debitAmt = Number(r[2]) || 0;
-        const creditAcc = String(r[3] || '').trim();
-        const creditAmt = Number(r[4]) || 0;
-        const item = String(r[5] || '').trim();
-        const tag = String(r[6] || '').trim();
-        const note = String(r[7] || '').trim();
-
-        if (dateStr && debitAcc && creditAcc && debitAmt > 0 && creditAmt > 0) {
-          parsedImportRows.push({
-            date: dateStr,
-            debitAcc,
-            debitAmt,
-            creditAcc,
-            creditAmt,
-            item,
-            tag,
-            note
-          });
-        }
-      }
-
-      renderImportPreview();
-    }
-
-    function renderImportPreview() {
-      const area = document.getElementById('import-preview-area');
-      const tbody = document.getElementById('import-preview-tbody');
-      document.getElementById('import-preview-count').textContent = parsedImportRows.length;
-
-      tbody.innerHTML = '';
-      parsedImportRows.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.date}</td>
-          <td>${r.debitAcc}</td>
-          <td>¥${r.debitAmt.toLocaleString()}</td>
-          <td>${r.creditAcc}</td>
-          <td>¥${r.creditAmt.toLocaleString()}</td>
-          <td>${r.item || '-'}</td>
-          <td>${r.tag || '-'}</td>
-          <td style="color:var(--text-sub);">${r.note || '-'}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      area.style.display = 'block';
-    }
-
-    function commitImport() {
-      if (parsedImportRows.length === 0) return;
-
-      parsedImportRows.forEach(r => {
-        if (!appState.accounts.some(a => a.name === r.debitAcc)) {
-          appState.accounts.push({ id: 'acc-' + Date.now() + Math.random(), name: r.debitAcc, type: 'expense', isUnsettled: false });
-        }
-        if (!appState.accounts.some(a => a.name === r.creditAcc)) {
-          appState.accounts.push({ id: 'acc-' + Date.now() + Math.random(), name: r.creditAcc, type: 'asset', isUnsettled: false });
-        }
-        if (r.item && !appState.items.includes(r.item)) appState.items.push(r.item);
-        if (r.tag && !appState.tags.includes(r.tag)) appState.tags.push(r.tag);
-
-        const hasUnsettled = [r.debitAcc, r.creditAcc].some(accName => {
-          const a = appState.accounts.find(x => x.name === accName);
-          return a && a.isUnsettled;
-        });
-
-        appState.journals.push({
-          id: 'j-' + Date.now() + Math.random().toString(36).substr(2, 4),
-          date: r.date,
-          debits: [{ account: r.debitAcc, amount: r.debitAmt }],
-          credits: [{ account: r.creditAcc, amount: r.creditAmt }],
-          item: r.item,
-          tag: r.tag,
-          note: r.note,
-          settled: !hasUnsettled,
-          reconciliationId: null
-        });
-      });
-
-      saveState();
-      alert(`${parsedImportRows.length}件の仕訳をインポートしました。`);
-      parsedImportRows = [];
-      document.getElementById('import-preview-area').style.display = 'none';
-      document.getElementById('file-import-input').value = '';
-      document.getElementById('import-file-name').textContent = '';
-      switchTab('journal');
-    }
-
-    function downloadSampleCSV() {
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" +
-        "日付,借方勘定,借方金額,貸方勘定,貸方金額,品目,メモタグ,備考\n" +
-        "2026-08-14,食費,1800,現金,1800,スーパー,変動費,サンプルインポート1\n" +
-        "2026-08-15,交通費,460,普通預金,460,電車代,変動費,サンプルインポート2\n";
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "kakeibo_sample.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // ==========================================
-    // 初期起動 & 認証状態監視
-    // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
       if (isFirebaseAvailable && auth) {
         auth.onAuthStateChanged(user => {
