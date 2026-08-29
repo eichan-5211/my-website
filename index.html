@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>クラウド家計簿・会計システム</title>
   <!-- SheetJS for CSV/Excel Import -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -62,6 +62,7 @@
       align-items: center;
       justify-content: center;
       z-index: 2000;
+      padding: 16px;
     }
 
     .auth-card {
@@ -71,7 +72,7 @@
       box-shadow: var(--shadow-md);
       width: 100%;
       max-width: 420px;
-      padding: 32px 28px;
+      padding: 28px 20px;
     }
 
     .auth-title {
@@ -116,13 +117,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
+      padding: 0 20px;
       height: 56px;
       flex-shrink: 0;
       box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
-    .app-brand { display: flex; align-items: center; gap: 10px; }
+    .app-brand { display: flex; align-items: center; gap: 8px; }
     .app-logo {
       width: 28px;
       height: 28px;
@@ -141,7 +142,7 @@
     .nav-btn {
       background: transparent;
       border: none;
-      padding: 0 14px;
+      padding: 0 12px;
       font-size: 0.88rem;
       font-weight: 600;
       color: var(--text-sub);
@@ -155,17 +156,21 @@
     .nav-btn:hover { background-color: var(--freee-blue-subtle); color: var(--freee-blue); }
     .nav-btn.active { background-color: var(--freee-blue-light); color: var(--freee-blue); font-weight: 700; }
 
-    .user-profile { display: flex; align-items: center; gap: 12px; font-size: 0.86rem; }
+    .user-profile { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; }
     .user-badge {
       background-color: var(--freee-blue-light);
       color: var(--freee-blue);
-      padding: 4px 10px;
+      padding: 4px 8px;
       border-radius: 20px;
       font-weight: 600;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .sync-status {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: var(--text-sub);
       display: flex;
       align-items: center;
@@ -173,7 +178,7 @@
     }
 
     /* メイン */
-    main { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    main { flex: 1; overflow-y: auto; padding: 18px 20px; }
     .view-section { display: none; max-width: 1200px; margin: 0 auto; }
     .view-section.active { display: block; }
 
@@ -182,41 +187,47 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-sm);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       overflow: hidden;
     }
 
     .card-header {
       background-color: #ffffff;
       border-bottom: 1px solid var(--border-color);
-      padding: 14px 20px;
+      padding: 12px 16px;
       font-weight: 700;
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       color: #1e293b;
+      flex-wrap: wrap;
+      gap: 8px;
     }
-    .card-body { padding: 20px; }
+    .card-body { padding: 16px; }
 
     /* サブナビゲーション・ピルタブ */
     .sub-tabs {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       border-bottom: 1px solid var(--border-color);
-      padding: 10px 20px;
+      padding: 8px 16px;
       background-color: #fafbfc;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
     }
     .sub-tab-btn {
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: var(--radius-sm);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       border: 1px solid var(--border-color);
       background-color: #ffffff;
       cursor: pointer;
       color: var(--text-sub);
       transition: all 0.15s;
+      flex-shrink: 0;
     }
     .sub-tab-btn:hover { background-color: var(--freee-blue-subtle); color: var(--freee-blue); }
     .sub-tab-btn.active {
@@ -230,14 +241,15 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 8px 16px;
-      font-size: 0.88rem;
+      padding: 8px 14px;
+      font-size: 0.86rem;
       font-weight: 600;
       cursor: pointer;
       border: 1px solid transparent;
       border-radius: var(--radius-sm);
       transition: all 0.15s ease;
       text-decoration: none;
+      touch-action: manipulation;
     }
     .btn-primary { background-color: var(--freee-blue); color: #ffffff; }
     .btn-primary:hover { background-color: var(--freee-blue-hover); }
@@ -248,13 +260,13 @@
     .btn-subtle:hover { background-color: #d0e7ff; }
     .btn-danger { background-color: #fff1f0; color: #cf1322; border-color: #ffa39e; }
     .btn-danger:hover { background-color: #ffccc7; }
-    .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+    .btn-sm { padding: 4px 8px; font-size: 0.78rem; }
 
-    .form-group { margin-bottom: 14px; }
-    .form-label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 5px; color: var(--text-sub); }
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; color: var(--text-sub); }
     .form-control {
       width: 100%;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       font-size: 0.9rem;
@@ -267,63 +279,70 @@
       box-shadow: 0 0 0 3px rgba(0, 128, 255, 0.12);
     }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
     .journal-box {
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       background-color: #fafbfc;
-      padding: 14px;
+      padding: 12px;
     }
-    .journal-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 700; font-size: 0.9rem; }
-    .journal-row-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .journal-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 700; font-size: 0.88rem; }
+    .journal-row-item { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
 
     .balance-status-bar {
       border-radius: var(--radius-sm);
-      padding: 12px 16px;
+      padding: 10px 14px;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       border: 1px solid transparent;
+      flex-wrap: wrap;
+      gap: 6px;
     }
     .balance-status-bar.matched { background-color: var(--income-bg); border-color: #bbf0d8; color: #007043; }
     .balance-status-bar.mismatched { background-color: #fff1f0; border-color: #ffccc7; color: #cf1322; }
 
-    .table-container { overflow-x: auto; background-color: #ffffff; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left; }
+    .table-container {
+      overflow-x: auto;
+      background-color: #ffffff;
+      -webkit-overflow-scrolling: touch;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left; }
     th {
       background-color: #f8fafc;
       color: var(--text-sub);
       font-weight: 600;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
     }
-    td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tr:hover td { background-color: #f8fbff; }
 
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.76rem; font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 12px; font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
     .badge-settled { background-color: var(--badge-settled-bg); color: var(--badge-settled-text); }
     .badge-unsettled { background-color: var(--badge-unsettled-bg); color: var(--badge-unsettled-text); }
     .badge-tag { background-color: var(--freee-blue-light); color: var(--freee-blue); }
     .badge-item { background-color: #f1f5f9; color: #475569; }
 
-    .filter-bar { background-color: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 16px 20px; }
+    .filter-bar { background-color: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 14px 16px; }
 
-    /* 仕訳帳一括操作バー */
     .bulk-action-bar {
       background-color: var(--freee-blue-subtle);
       border-bottom: 1px solid var(--border-color);
-      padding: 10px 20px;
+      padding: 8px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.86rem;
+      font-size: 0.84rem;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .calendar-grid {
@@ -335,10 +354,10 @@
       border-radius: var(--radius-sm);
       overflow: hidden;
     }
-    .calendar-header-day { background-color: #f8fafc; padding: 10px 6px; text-align: center; font-weight: 600; font-size: 0.82rem; color: var(--text-sub); }
+    .calendar-header-day { background-color: #f8fafc; padding: 8px 2px; text-align: center; font-weight: 600; font-size: 0.8rem; color: var(--text-sub); }
     .calendar-cell {
-      min-height: 90px;
-      padding: 6px;
+      min-height: 80px;
+      padding: 4px;
       background-color: #ffffff;
       cursor: pointer;
       display: flex;
@@ -349,14 +368,14 @@
     .calendar-cell.other-month { background-color: #fafbfc; opacity: 0.4; pointer-events: none; }
     .calendar-cell.selected { background-color: var(--freee-blue-light); border: 1px solid var(--freee-blue); }
 
-    .cal-date-num { font-weight: 600; font-size: 0.82rem; margin-bottom: 4px; color: var(--text-sub); }
-    .cal-income { font-size: 0.76rem; font-weight: 600; color: var(--income-green); background-color: var(--income-bg); padding: 1px 4px; border-radius: 3px; margin-bottom: 2px; }
-    .cal-expense { font-size: 0.76rem; font-weight: 600; color: var(--expense-coral); background-color: var(--expense-bg); padding: 1px 4px; border-radius: 3px; margin-bottom: 2px; }
-    .cal-budget { font-size: 0.74rem; color: var(--text-sub); background-color: #f1f5f9; padding: 1px 4px; border-radius: 3px; margin-top: 2px; }
+    .cal-date-num { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; color: var(--text-sub); }
+    .cal-income { font-size: 0.72rem; font-weight: 600; color: var(--income-green); background-color: var(--income-bg); padding: 1px 2px; border-radius: 2px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-expense { font-size: 0.72rem; font-weight: 600; color: var(--expense-coral); background-color: var(--expense-bg); padding: 1px 2px; border-radius: 2px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-budget { font-size: 0.7rem; color: var(--text-sub); background-color: #f1f5f9; padding: 1px 2px; border-radius: 2px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .kpi-card { border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; background-color: #ffffff; box-shadow: var(--shadow-sm); }
-    .kpi-title { font-size: 0.82rem; color: var(--text-sub); font-weight: 600; margin-bottom: 6px; }
-    .kpi-val { font-size: 1.5rem; font-weight: 700; }
+    .kpi-card { border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px 14px; background-color: #ffffff; box-shadow: var(--shadow-sm); }
+    .kpi-title { font-size: 0.78rem; color: var(--text-sub); font-weight: 600; margin-bottom: 4px; }
+    .kpi-val { font-size: 1.3rem; font-weight: 700; }
 
     .modal-overlay {
       position: fixed;
@@ -367,16 +386,17 @@
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      padding: 12px;
     }
     .modal-overlay.active { display: flex; }
     .modal-box {
       background-color: #ffffff;
       border-radius: var(--radius-md);
-      width: 90%;
+      width: 100%;
       max-width: 880px;
-      max-height: 85vh;
+      max-height: 90vh;
       overflow-y: auto;
-      padding: 24px;
+      padding: 18px;
       box-shadow: var(--shadow-md);
       border: 1px solid var(--border-color);
     }
@@ -391,6 +411,93 @@
       transition: background-color 0.12s;
     }
     .clickable-amount:hover { background-color: var(--freee-blue-light); }
+
+    /* =======================================================
+       スマートフォン向け レスポンシブ メディアクエリ
+       ======================================================= */
+    @media (max-width: 768px) {
+      header {
+        height: auto;
+        padding: 8px 12px 4px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        width: 100%;
+      }
+      nav::-webkit-scrollbar { display: none; }
+      .nav-btn {
+        padding: 5px 10px;
+        font-size: 0.82rem;
+        margin: 0 2px;
+        flex-shrink: 0;
+      }
+
+      main {
+        padding: 12px 10px;
+      }
+
+      .card-header {
+        padding: 10px 12px;
+      }
+      .card-body {
+        padding: 12px;
+      }
+
+      /* グリッドレイアウトをスマホ向けに折り返し */
+      .grid-4, .grid-3, .grid-2 {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+      }
+
+      /* 予実管理のサマリーKPIカードはスマホで2列表示 */
+      .kpi-grid-mobile {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px;
+      }
+
+      /* 仕訳入力の行レイアウト */
+      .journal-row-item {
+        flex-wrap: nowrap;
+      }
+      .journal-row-item select {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .journal-row-item input {
+        width: 95px !important;
+        flex-shrink: 0;
+      }
+
+      /* カレンダーの日付マス */
+      .calendar-cell {
+        min-height: 56px;
+        padding: 2px;
+      }
+      .cal-date-num {
+        font-size: 0.72rem;
+      }
+      .cal-income, .cal-expense, .cal-budget {
+        font-size: 0.64rem;
+        padding: 0 1px;
+      }
+
+      /* モーダル */
+      .modal-box {
+        padding: 14px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -426,9 +533,16 @@
 
   <!-- ヘッダー -->
   <header>
-    <div class="app-brand">
-      <div class="app-logo">f</div>
-      <div class="app-title">クラウド家計簿・会計</div>
+    <div class="header-top">
+      <div class="app-brand">
+        <div class="app-logo">f</div>
+        <div class="app-title">クラウド家計簿</div>
+      </div>
+      <div class="user-profile">
+        <span class="sync-status" id="sync-status-indicator">☁️ 同期中</span>
+        <span class="user-badge" id="current-user-display">ユーザー</span>
+        <button class="btn btn-outline btn-sm" onclick="logout()">ログアウト</button>
+      </div>
     </div>
     <nav>
       <button class="nav-btn active" onclick="switchTab('entry')">仕訳入力</button>
@@ -440,22 +554,17 @@
       <button class="nav-btn" onclick="switchTab('master')">マスタ設定</button>
       <button class="nav-btn" onclick="switchTab('import')">データ取込</button>
     </nav>
-    <div class="user-profile">
-      <span class="sync-status" id="sync-status-indicator">☁️ 同期中</span>
-      <span class="user-badge" id="current-user-display">ユーザー</span>
-      <button class="btn btn-outline btn-sm" onclick="logout()">ログアウト</button>
-    </div>
   </header>
 
   <main>
-    <!-- 1. 仕訳入力 -->
+    <!-- ================= 1. 仕訳入力 ================= -->
     <div id="view-entry" class="view-section active">
       <div class="card">
         <div class="card-header">
           <span>仕訳の登録</span>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label class="form-label" style="margin: 0;">定型取引呼出:</label>
-            <select id="entry-template-select" class="form-control" style="width: 220px;" onchange="applyTemplate()">
+          <div style="display: flex; align-items: center; gap: 6px; width: 100%; max-width: 280px;">
+            <label class="form-label" style="margin: 0; white-space: nowrap;">定型呼出:</label>
+            <select id="entry-template-select" class="form-control" onchange="applyTemplate()">
               <option value="">-- 定型取引を選択 --</option>
             </select>
           </div>
@@ -464,7 +573,7 @@
           <form id="journal-form" onsubmit="submitJournal(event)">
             <input type="hidden" id="entry-edit-id" value="">
 
-            <div class="grid-3" style="margin-bottom: 16px;">
+            <div class="grid-3" style="margin-bottom: 12px;">
               <div class="form-group">
                 <label class="form-label">取引日 *</label>
                 <input type="date" id="entry-date" class="form-control" required value="2026-08-13">
@@ -483,25 +592,27 @@
               </div>
             </div>
 
-            <div class="grid-2" style="margin-bottom: 16px;">
+            <div class="grid-2" style="margin-bottom: 12px;">
+              <!-- 借方 -->
               <div class="journal-box">
                 <div class="journal-box-header">
                   <span style="color: var(--freee-blue);">借方 (Debit)</span>
                   <button type="button" class="btn btn-subtle btn-sm" onclick="addEntryRow('debit')">＋ 行追加</button>
                 </div>
                 <div id="debit-rows-container"></div>
-                <div style="text-align: right; font-weight: 700; margin-top: 8px; font-size: 0.9rem;">
+                <div style="text-align: right; font-weight: 700; margin-top: 6px; font-size: 0.88rem;">
                   借方合計: <span id="debit-total-display">¥0</span>
                 </div>
               </div>
 
+              <!-- 貸方 -->
               <div class="journal-box">
                 <div class="journal-box-header">
                   <span style="color: var(--expense-coral);">貸方 (Credit)</span>
                   <button type="button" class="btn btn-subtle btn-sm" onclick="addEntryRow('credit')">＋ 行追加</button>
                 </div>
                 <div id="credit-rows-container"></div>
-                <div style="text-align: right; font-weight: 700; margin-top: 8px; font-size: 0.9rem;">
+                <div style="text-align: right; font-weight: 700; margin-top: 6px; font-size: 0.88rem;">
                   貸方合計: <span id="credit-total-display">¥0</span>
                 </div>
               </div>
@@ -517,11 +628,11 @@
               <input type="text" id="entry-note" class="form-control" placeholder="取引メモを入力">
             </div>
 
-            <div id="settlement-preview-bar" style="font-size: 0.84rem; color: var(--text-sub); margin-bottom: 16px; padding: 8px 12px; background: #fafbfc; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <div id="settlement-preview-bar" style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 14px; padding: 6px 10px; background: #fafbfc; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
               判定状態: <span id="settlement-preview-text" class="badge badge-settled">決済済み</span> (未決済科目が含まれる場合は自動で未決済になります)
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
               <button type="button" class="btn btn-outline" onclick="resetEntryForm()">クリア</button>
               <button type="submit" id="btn-save-journal" class="btn btn-primary">仕訳を登録する</button>
             </div>
@@ -530,7 +641,7 @@
       </div>
     </div>
 
-    <!-- 2. 仕訳帳 (複数選択・一括操作対応) -->
+    <!-- ================= 2. 仕訳帳 ================= -->
     <div id="view-journal" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -538,10 +649,10 @@
           <span id="journal-count-badge" class="badge badge-tag">0件</span>
         </div>
         <div class="filter-bar">
-          <div class="grid-4" style="margin-bottom: 12px;">
+          <div class="grid-4" style="margin-bottom: 10px;">
             <div>
               <label class="form-label">日付範囲</label>
-              <div style="display: flex; gap: 6px; align-items: center;">
+              <div style="display: flex; gap: 4px; align-items: center;">
                 <input type="date" id="filter-date-from" class="form-control" onchange="renderJournalTable()">
                 <span style="color: var(--text-sub);">〜</span>
                 <input type="date" id="filter-date-to" class="form-control" onchange="renderJournalTable()">
@@ -549,7 +660,7 @@
             </div>
             <div>
               <label class="form-label">金額範囲</label>
-              <div style="display: flex; gap: 6px; align-items: center;">
+              <div style="display: flex; gap: 4px; align-items: center;">
                 <input type="number" id="filter-amount-min" placeholder="0" class="form-control" oninput="renderJournalTable()">
                 <span style="color: var(--text-sub);">〜</span>
                 <input type="number" id="filter-amount-max" placeholder="上限なし" class="form-control" oninput="renderJournalTable()">
@@ -587,9 +698,9 @@
                 <option value="amount-asc">金額 小さい順</option>
               </select>
             </div>
-            <div style="grid-column: span 2; display: flex; align-items: flex-end; gap: 8px;">
+            <div style="grid-column: span 2; display: flex; align-items: flex-end; gap: 6px;">
               <input type="text" id="filter-keyword" class="form-control" placeholder="科目・備考・品目を検索..." oninput="renderJournalTable()">
-              <button type="button" class="btn btn-outline" onclick="resetJournalFilters()">リセット</button>
+              <button type="button" class="btn btn-outline" onclick="resetJournalFilters()" style="white-space: nowrap;">リセット</button>
             </div>
           </div>
         </div>
@@ -597,11 +708,11 @@
         <!-- 一括操作バー -->
         <div id="journal-bulk-bar" class="bulk-action-bar" style="display: none;">
           <div>
-            <span>選択中: <strong id="selected-journal-count" style="color: var(--freee-blue);">0</strong> 件 (現在の絞り込み対象)</span>
+            <span>選択中: <strong id="selected-journal-count" style="color: var(--freee-blue);">0</strong> 件</span>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline btn-sm" onclick="openBulkEditModal()">一括編集 (品目/タグ変更)</button>
-            <button class="btn btn-danger btn-sm" onclick="bulkDeleteJournals()">選択した仕訳を一括削除</button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-outline btn-sm" onclick="openBulkEditModal()">一括編集</button>
+            <button class="btn btn-danger btn-sm" onclick="bulkDeleteJournals()">一括削除</button>
           </div>
         </div>
 
@@ -609,17 +720,17 @@
           <table>
             <thead>
               <tr>
-                <th style="width: 44px; text-align: center;">
+                <th style="width: 36px; text-align: center;">
                   <input type="checkbox" id="journal-select-all" onchange="toggleSelectAllJournals(this.checked)">
                 </th>
-                <th style="width: 100px;">日付</th>
-                <th style="width: 90px;">状態</th>
+                <th style="width: 95px;">日付</th>
+                <th style="width: 80px;">状態</th>
                 <th>借方勘定 / 金額</th>
                 <th>貸方勘定 / 金額</th>
-                <th style="width: 110px;">品目</th>
-                <th style="width: 110px;">メモタグ</th>
+                <th style="width: 90px;">品目</th>
+                <th style="width: 90px;">メモタグ</th>
                 <th>備考</th>
-                <th style="width: 110px; text-align: center;">操作</th>
+                <th style="width: 95px; text-align: center;">操作</th>
               </tr>
             </thead>
             <tbody id="journal-tbody"></tbody>
@@ -628,33 +739,33 @@
       </div>
     </div>
 
-    <!-- 3. B/S・P/L (4タブ完全分離表示) -->
+    <!-- ================= 3. B/S・P/L (4タブ完全分離表示) ================= -->
     <div id="view-reports" class="view-section">
       <div class="card">
         <div class="card-header">
           <span>財務諸表・月次推移レポート</span>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label class="form-label" style="margin: 0;">基準年月:</label>
-            <input type="month" id="report-month" class="form-control" style="width: 160px;" value="2026-08" onchange="renderReports()">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label class="form-label" style="margin: 0; font-size: 0.8rem;">基準年月:</label>
+            <input type="month" id="report-month" class="form-control" style="width: 140px; padding: 4px 8px;" value="2026-08" onchange="renderReports()">
           </div>
         </div>
 
         <div class="sub-tabs">
-          <button class="sub-tab-btn active" id="subtab-btn-pl" onclick="setReportSubTab('pl')">① 単月 P/L (損益計算書)</button>
-          <button class="sub-tab-btn" id="subtab-btn-bs" onclick="setReportSubTab('bs')">② 単月 B/S (貸借対照表)</button>
-          <button class="sub-tab-btn" id="subtab-btn-pl-trend" onclick="setReportSubTab('pl-trend')">③ 月次推移 P/L</button>
-          <button class="sub-tab-btn" id="subtab-btn-bs-trend" onclick="setReportSubTab('bs-trend')">④ 月次推移 B/S</button>
+          <button class="sub-tab-btn active" id="subtab-btn-pl" onclick="setReportSubTab('pl')">① 単月 P/L</button>
+          <button class="sub-tab-btn" id="subtab-btn-bs" onclick="setReportSubTab('bs')">② 単月 B/S</button>
+          <button class="sub-tab-btn" id="subtab-btn-pl-trend" onclick="setReportSubTab('pl-trend')">③ 推移 P/L</button>
+          <button class="sub-tab-btn" id="subtab-btn-bs-trend" onclick="setReportSubTab('bs-trend')">④ 推移 B/S</button>
         </div>
 
         <div class="card-body">
           <div id="report-view-pl" class="report-view">
             <div style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
-              <div style="background-color: var(--freee-blue-light); padding: 10px 14px; font-weight: 700; color: var(--freee-blue);">
+              <div style="background-color: var(--freee-blue-light); padding: 8px 12px; font-weight: 700; color: var(--freee-blue); font-size: 0.9rem;">
                 損益計算書 (P/L) - 当月発生額
               </div>
               <div class="table-container">
                 <table>
-                  <thead><tr><th>勘定科目</th><th style="text-align: right; width: 140px;">金額 (円)</th></tr></thead>
+                  <thead><tr><th>勘定科目</th><th style="text-align: right; width: 120px;">金額 (円)</th></tr></thead>
                   <tbody id="pl-tbody"></tbody>
                 </table>
               </div>
@@ -663,12 +774,12 @@
 
           <div id="report-view-bs" class="report-view" style="display: none;">
             <div style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
-              <div style="background-color: var(--income-bg); padding: 10px 14px; font-weight: 700; color: var(--income-green);">
+              <div style="background-color: var(--income-bg); padding: 8px 12px; font-weight: 700; color: var(--income-green); font-size: 0.9rem;">
                 貸借対照表 (B/S) - 当月末時点累積
               </div>
               <div class="table-container">
                 <table>
-                  <thead><tr><th>勘定科目</th><th style="text-align: right; width: 140px;">金額 (円)</th></tr></thead>
+                  <thead><tr><th>勘定科目</th><th style="text-align: right; width: 120px;">金額 (円)</th></tr></thead>
                   <tbody id="bs-tbody"></tbody>
                 </table>
               </div>
@@ -676,7 +787,7 @@
           </div>
 
           <div id="report-view-pl-trend" class="report-view" style="display: none;">
-            <div style="margin-bottom: 8px; font-size: 0.82rem; color: var(--text-sub);">
+            <div style="margin-bottom: 6px; font-size: 0.78rem; color: var(--text-sub);">
               ※金額をクリックすると、該当月・科目の詳細仕訳が表示されます。
             </div>
             <div class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
@@ -685,7 +796,7 @@
           </div>
 
           <div id="report-view-bs-trend" class="report-view" style="display: none;">
-            <div style="margin-bottom: 8px; font-size: 0.82rem; color: var(--text-sub);">
+            <div style="margin-bottom: 6px; font-size: 0.78rem; color: var(--text-sub);">
               ※金額をクリックすると、該当月末までの累積対象仕訳が表示されます。
             </div>
             <div class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
@@ -696,18 +807,18 @@
       </div>
     </div>
 
-    <!-- 4. カレンダー -->
+    <!-- ================= 4. カレンダー ================= -->
     <div id="view-calendar" class="view-section">
       <div class="card">
         <div class="card-header">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span id="cal-month-title" style="font-size: 1.05rem;">2026年 8月</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="cal-month-title" style="font-size: 0.95rem; font-weight: 700;">2026年 8月</span>
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(-1)">前月</button>
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(1)">翌月</button>
           </div>
-          <div style="font-size: 0.82rem; color: var(--text-sub);">緑: 収入 / 橙: 費用</div>
+          <div style="font-size: 0.78rem; color: var(--text-sub);">緑: 収入 / 橙: 費用</div>
         </div>
-        <div class="card-body" style="padding: 16px;">
+        <div class="card-body" style="padding: 10px;">
           <div class="calendar-grid" id="calendar-view-grid"></div>
         </div>
       </div>
@@ -726,7 +837,7 @@
       </div>
     </div>
 
-    <!-- 5. 消込 -->
+    <!-- ================= 5. 消込 ================= -->
     <div id="view-reconcile" class="view-section">
       <div class="card">
         <div class="card-header"><span>① カード引落情報の入力</span></div>
@@ -778,19 +889,19 @@
           </div>
         </div>
 
-        <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+        <div class="table-container" style="max-height: 280px; overflow-y: auto;">
           <table>
             <thead>
               <tr>
-                <th style="width: 44px; text-align: center;">
+                <th style="width: 36px; text-align: center;">
                   <input type="checkbox" id="rec-select-all" onchange="toggleSelectAllUnsettled(this.checked)">
                 </th>
-                <th style="width: 100px;">取引日付</th>
+                <th style="width: 95px;">取引日付</th>
                 <th>借方勘定</th>
                 <th>貸方勘定</th>
-                <th style="width: 110px; text-align: right;">金額 (円)</th>
-                <th style="width: 110px;">品目</th>
-                <th style="width: 110px;">メモタグ</th>
+                <th style="width: 100px; text-align: right;">金額 (円)</th>
+                <th style="width: 90px;">品目</th>
+                <th style="width: 90px;">メモタグ</th>
                 <th>備考</th>
               </tr>
             </thead>
@@ -798,65 +909,65 @@
           </table>
         </div>
 
-        <div class="card-body" style="border-top: 1px solid var(--border-color); background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 0.92rem;">
-            <span style="margin-right: 18px;">選択合計: <strong id="rec-selected-sum" style="color: var(--freee-blue);">¥0</strong></span>
-            <span style="margin-right: 18px;">引落設定額: <strong id="rec-target-display">¥0</strong></span>
+        <div class="card-body" style="border-top: 1px solid var(--border-color); background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="font-size: 0.88rem;">
+            <span style="margin-right: 12px;">合計: <strong id="rec-selected-sum" style="color: var(--freee-blue);">¥0</strong></span>
+            <span style="margin-right: 12px;">設定額: <strong id="rec-target-display">¥0</strong></span>
             <span id="rec-diff-badge" class="badge">差額: ¥0</span>
           </div>
           <button type="button" id="btn-execute-reconcile" class="btn btn-primary" disabled onclick="executeReconciliation()">
-            消込を実行する (決済済みに変更)
+            消込を実行する
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 6. 予実管理 -->
+    <!-- ================= 6. 予実管理 ================= -->
     <div id="view-budget" class="view-section">
       <div class="card">
         <div class="card-header">
           <span>費用 予実分析 & 着地予想 (2026年8月)</span>
-          <span style="font-size: 0.82rem; font-weight: 500; color: var(--text-sub);">
-            着地予想 = 8/1〜8/13 (実績) ＋ 8/14〜8/31 (予算)
+          <span style="font-size: 0.78rem; font-weight: 500; color: var(--text-sub);">
+            基準日: 8/13 (実績＋残予算)
           </span>
         </div>
         <div class="card-body">
-          <div class="grid-4" style="margin-bottom: 18px;">
+          <div class="grid-4 kpi-grid-mobile" style="margin-bottom: 14px;">
             <div class="kpi-card">
-              <div class="kpi-title">月次総予算 (8/1〜8/31)</div>
+              <div class="kpi-title">月次総予算</div>
               <div class="kpi-val" id="kpi-total-budget">¥0</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-title">実績 (8/1〜8/13)</div>
+              <div class="kpi-title">実績 (8/1〜13)</div>
               <div class="kpi-val" id="kpi-actual-amount" style="color: var(--freee-blue);">¥0</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-title">予算残り (8/14〜8/31)</div>
+              <div class="kpi-title">予算残 (8/14〜31)</div>
               <div class="kpi-val" id="kpi-future-budget" style="color: var(--text-sub);">¥0</div>
             </div>
             <div class="kpi-card" style="background-color: var(--freee-blue-light); border-color: #bfe0ff;">
-              <div class="kpi-title">着地予想 & 差異</div>
+              <div class="kpi-title">着地予想</div>
               <div class="kpi-val" id="kpi-landing-forecast">¥0</div>
-              <div id="kpi-landing-diff" style="font-size: 0.85rem; font-weight: 700; margin-top: 4px;">差額: ¥0 (0%)</div>
+              <div id="kpi-landing-diff" style="font-size: 0.78rem; font-weight: 700; margin-top: 2px;">差額: ¥0 (0%)</div>
             </div>
           </div>
 
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 700; font-size: 0.92rem;">勘定科目別 着地予想 内訳表</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 700; font-size: 0.88rem;">科目別 着地予想内訳</span>
               <button class="btn btn-outline btn-sm" onclick="toggleBudgetBreakdown()" id="btn-toggle-budget">内訳を閉じる</button>
             </div>
             <div id="budget-breakdown-container" class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
               <table>
                 <thead>
                   <tr>
-                    <th>勘定科目 (費用)</th>
+                    <th>勘定科目</th>
                     <th style="text-align: right;">月次予算</th>
-                    <th style="text-align: right;">実績 (8/1~13)</th>
-                    <th style="text-align: right;">予定予算 (8/14~31)</th>
+                    <th style="text-align: right;">実績(8/1~13)</th>
+                    <th style="text-align: right;">予定(8/14~31)</th>
                     <th style="text-align: right;">着地予想</th>
-                    <th style="text-align: right;">差額 (着地 - 予算)</th>
-                    <th style="text-align: right;">達成率 (着地/予算)</th>
+                    <th style="text-align: right;">差額</th>
+                    <th style="text-align: right;">達成率</th>
                   </tr>
                 </thead>
                 <tbody id="budget-breakdown-tbody"></tbody>
@@ -868,7 +979,7 @@
 
       <div class="card">
         <div class="card-header">
-          <span>① 日別予算設定 (カレンダー複数日選択対応)</span>
+          <span>① 日別予算設定 (カレンダー複数日選択)</span>
           <button class="btn btn-outline btn-sm" onclick="clearSelectedBudgetDays()">選択解除</button>
         </div>
         <div class="filter-bar">
@@ -883,27 +994,27 @@
             </div>
             <div class="form-group" style="margin: 0; display: flex; align-items: flex-end;">
               <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveDayBudget()">
-                選択日 (<span id="selected-days-count">0</span>日) に予算を一括登録
+                選択日 (<span id="selected-days-count">0</span>日) に一括登録
               </button>
             </div>
           </div>
         </div>
-        <div class="card-body" style="padding: 16px;">
+        <div class="card-body" style="padding: 10px;">
           <div class="calendar-grid" id="budget-calendar-grid"></div>
         </div>
       </div>
     </div>
 
-    <!-- 7. マスタ登録 -->
+    <!-- ================= 7. マスタ登録 ================= -->
     <div id="view-master" class="view-section">
-      <div class="grid-2" style="margin-bottom: 20px;">
+      <div class="grid-2" style="margin-bottom: 16px;">
         <div class="card" style="margin: 0;">
-          <div class="card-header"><span>① 勘定科目の登録 (未決済設定)</span></div>
+          <div class="card-header"><span>① 勘定科目登録 (未決済設定)</span></div>
           <div class="card-body">
-            <form onsubmit="addMasterAccount(event)" style="margin-bottom: 14px;">
-              <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <input type="text" id="m-acc-name" class="form-control" placeholder="科目名 (例: クレジットカード未払金)" required>
-                <select id="m-acc-type" class="form-control" style="width: 140px;" required>
+            <form onsubmit="addMasterAccount(event)" style="margin-bottom: 12px;">
+              <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
+                <input type="text" id="m-acc-name" class="form-control" placeholder="科目名 (例: 通信費)" required style="flex: 1 1 140px;">
+                <select id="m-acc-type" class="form-control" style="width: 110px;" required>
                   <option value="expense">費用</option>
                   <option value="revenue">収益</option>
                   <option value="asset">資産</option>
@@ -912,15 +1023,15 @@
                 </select>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label style="font-size: 0.82rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                  <input type="checkbox" id="m-acc-unsettled"> 未決済(消込対象)に使用する科目
+                <label style="font-size: 0.8rem; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                  <input type="checkbox" id="m-acc-unsettled"> 未決済対象科目
                 </label>
-                <button type="submit" class="btn btn-primary btn-sm">勘定科目を追加</button>
+                <button type="submit" class="btn btn-primary btn-sm">追加</button>
               </div>
             </form>
-            <div class="table-container" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <div class="table-container" style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
               <table>
-                <thead><tr><th>勘定科目名</th><th>性質</th><th>未決済対象</th><th style="width: 70px; text-align: center;">操作</th></tr></thead>
+                <thead><tr><th>勘定科目名</th><th>性質</th><th>未決済</th><th style="width: 50px; text-align: center;">操作</th></tr></thead>
                 <tbody id="m-acc-tbody"></tbody>
               </table>
             </div>
@@ -928,21 +1039,21 @@
         </div>
 
         <div class="card" style="margin: 0;">
-          <div class="card-header"><span>② 品目 & ③ メモタグの登録</span></div>
+          <div class="card-header"><span>② 品目 & ③ メモタグ登録</span></div>
           <div class="card-body">
             <label class="form-label">品目の追加</label>
-            <form onsubmit="addMasterItem(event)" style="display: flex; gap: 8px; margin-bottom: 12px;">
-              <input type="text" id="m-item-name" class="form-control" placeholder="品目名 (例: 外食, 電気代)" required>
-              <button type="submit" class="btn btn-primary">追加</button>
+            <form onsubmit="addMasterItem(event)" style="display: flex; gap: 6px; margin-bottom: 10px;">
+              <input type="text" id="m-item-name" class="form-control" placeholder="品目名 (例: 外食)" required>
+              <button type="submit" class="btn btn-primary btn-sm">追加</button>
             </form>
-            <div id="m-items-tags-container" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;"></div>
+            <div id="m-items-tags-container" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px;"></div>
 
             <label class="form-label">メモタグの追加</label>
-            <form onsubmit="addMasterTag(event)" style="display: flex; gap: 8px; margin-bottom: 12px;">
-              <input type="text" id="m-tag-name" class="form-control" placeholder="タグ名 (例: 固定費, 変動費)" required>
-              <button type="submit" class="btn btn-primary">追加</button>
+            <form onsubmit="addMasterTag(event)" style="display: flex; gap: 6px; margin-bottom: 10px;">
+              <input type="text" id="m-tag-name" class="form-control" placeholder="タグ名 (例: 固定費)" required>
+              <button type="submit" class="btn btn-primary btn-sm">追加</button>
             </form>
-            <div id="m-tags-tags-container" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+            <div id="m-tags-tags-container" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
           </div>
         </div>
       </div>
@@ -950,8 +1061,8 @@
       <div class="card">
         <div class="card-header"><span>④ 定型取引 (テンプレート) 登録</span></div>
         <div class="card-body">
-          <form onsubmit="addMasterTemplate(event)" style="margin-bottom: 16px;">
-            <div class="grid-4" style="margin-bottom: 10px;">
+          <form onsubmit="addMasterTemplate(event)" style="margin-bottom: 14px;">
+            <div class="grid-4" style="margin-bottom: 8px;">
               <div>
                 <label class="form-label">テンプレート名</label>
                 <input type="text" id="tpl-name" class="form-control" placeholder="例: スーパー食費(カード)" required>
@@ -988,7 +1099,7 @@
             <table>
               <thead>
                 <tr>
-                  <th>テンプレート名</th><th>借方</th><th>貸方</th><th>初期金額</th><th>品目</th><th>タグ</th><th style="width: 70px; text-align: center;">操作</th>
+                  <th>テンプレート名</th><th>借方</th><th>貸方</th><th>金額</th><th>品目</th><th>タグ</th><th style="width: 50px; text-align: center;">操作</th>
                 </tr>
               </thead>
               <tbody id="m-tpl-tbody"></tbody>
@@ -998,32 +1109,32 @@
       </div>
     </div>
 
-    <!-- 8. データインポート -->
+    <!-- ================= 8. データインポート ================= -->
     <div id="view-import" class="view-section">
       <div class="card">
         <div class="card-header">
           <span>CSV / Excel ファイル取込</span>
-          <button class="btn btn-outline btn-sm" onclick="downloadSampleCSV()">サンプルCSVダウンロード</button>
+          <button class="btn btn-outline btn-sm" onclick="downloadSampleCSV()">サンプルCSV</button>
         </div>
         <div class="card-body">
-          <p style="font-size: 0.86rem; color: var(--text-sub); margin-bottom: 14px;">
+          <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 12px;">
             列構成: <strong>A列:日付, B列:借方勘定, C列:借方金額, D列:貸方勘定, E列:貸方金額, F列:品目, G列:メモタグ, H列:備考</strong>
           </p>
 
-          <div style="border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 28px; text-align: center; background-color: #f8fafc; margin-bottom: 18px;">
+          <div style="border: 2px dashed #cbd5e1; border-radius: var(--radius-md); padding: 20px; text-align: center; background-color: #f8fafc; margin-bottom: 14px;">
             <input type="file" id="file-import-input" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleFileUpload(event)">
-            <button type="button" class="btn btn-primary" onclick="document.getElementById('file-import-input').click()">
+            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('file-import-input').click()">
               ファイルを選択 (.csv, .xlsx)
             </button>
-            <div id="import-file-name" style="margin-top: 10px; font-weight: 600; font-size: 0.88rem;"></div>
+            <div id="import-file-name" style="margin-top: 8px; font-weight: 600; font-size: 0.82rem;"></div>
           </div>
 
           <div id="import-preview-area" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-weight: 700; font-size: 0.95rem;">取込プレビュー (<span id="import-preview-count">0</span>件)</span>
-              <button type="button" class="btn btn-primary" onclick="commitImport()">この内容で一括登録</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 700; font-size: 0.88rem;">プレビュー (<span id="import-preview-count">0</span>件)</span>
+              <button type="button" class="btn btn-primary btn-sm" onclick="commitImport()">一括登録</button>
             </div>
-            <div class="table-container" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <div class="table-container" style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
               <table>
                 <thead>
                   <tr><th>日付</th><th>借方勘定</th><th>借方金額</th><th>貸方勘定</th><th>貸方金額</th><th>品目</th><th>タグ</th><th>備考</th></tr>
@@ -1040,13 +1151,13 @@
   <!-- モーダル: 消込詳細 -->
   <div id="reconciliation-detail-modal" class="modal-overlay">
     <div class="modal-box">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-        <span style="font-weight: 700; font-size: 1.05rem;">消込 紐付け詳細</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <span style="font-weight: 700; font-size: 0.98rem;">消込 紐付け詳細</span>
         <button class="btn btn-outline btn-sm" onclick="closeReconcileModal()">✕</button>
       </div>
       <div id="rec-modal-content"></div>
-      <div style="text-align: right; margin-top: 16px;">
-        <button class="btn btn-primary" onclick="closeReconcileModal()">閉じる</button>
+      <div style="text-align: right; margin-top: 14px;">
+        <button class="btn btn-primary btn-sm" onclick="closeReconcileModal()">閉じる</button>
       </div>
     </div>
   </div>
@@ -1054,11 +1165,11 @@
   <!-- モーダル: 月次推移表 ドリルダウン詳細仕訳 -->
   <div id="trend-drilldown-modal" class="modal-overlay">
     <div class="modal-box">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-        <span id="drilldown-modal-title" style="font-weight: 700; font-size: 1.05rem;">勘定科目 仕訳明細一覧</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <span id="drilldown-modal-title" style="font-weight: 700; font-size: 0.95rem;">勘定科目 仕訳明細一覧</span>
         <button class="btn btn-outline btn-sm" onclick="closeDrilldownModal()">✕</button>
       </div>
-      <div class="table-container" style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+      <div class="table-container" style="max-height: 340px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
         <table>
           <thead>
             <tr><th>日付</th><th>借方勘定 / 金額</th><th>貸方勘定 / 金額</th><th>品目</th><th>タグ</th><th>備考</th><th>状態</th></tr>
@@ -1066,17 +1177,17 @@
           <tbody id="drilldown-modal-tbody"></tbody>
         </table>
       </div>
-      <div style="text-align: right; margin-top: 16px;">
-        <button class="btn btn-primary" onclick="closeDrilldownModal()">閉じる</button>
+      <div style="text-align: right; margin-top: 14px;">
+        <button class="btn btn-primary btn-sm" onclick="closeDrilldownModal()">閉じる</button>
       </div>
     </div>
   </div>
 
   <!-- モーダル: 仕訳帳 一括編集 -->
   <div id="bulk-edit-modal" class="modal-overlay">
-    <div class="modal-box" style="max-width: 440px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-        <span style="font-weight: 700; font-size: 1.05rem;">選択仕訳の一括編集</span>
+    <div class="modal-box" style="max-width: 400px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <span style="font-weight: 700; font-size: 0.95rem;">選択仕訳の一括編集</span>
         <button class="btn btn-outline btn-sm" onclick="closeBulkEditModal()">✕</button>
       </div>
       <form onsubmit="applyBulkEdit(event)">
@@ -1092,9 +1203,9 @@
             <option value="__KEEP__">-- 変更しない --</option>
           </select>
         </div>
-        <div style="text-align: right; margin-top: 20px; display: flex; justify-content: flex-end; gap: 8px;">
-          <button type="button" class="btn btn-outline" onclick="closeBulkEditModal()">キャンセル</button>
-          <button type="submit" class="btn btn-primary">一括適用</button>
+        <div style="text-align: right; margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeBulkEditModal()">キャンセル</button>
+          <button type="submit" class="btn btn-primary btn-sm">一括適用</button>
         </div>
       </form>
     </div>
@@ -1849,6 +1960,7 @@
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
 
+      // P/L集計: 収益=貸方-借方, 費用=借方-貸方
       const plExpenses = {};
       const plRevenues = {};
 
@@ -2558,6 +2670,7 @@
 
       for (let day = 1; day <= totalDays; day++) {
         const cell = document.createElement('div');
+        cell.className = 'calendar-cell';
         const dateStr = `2026-08-${String(day).padStart(2, '0')}`;
         const isSelected = appState.selectedBudgetDays.includes(dateStr);
 
