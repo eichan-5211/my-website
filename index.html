@@ -1276,6 +1276,52 @@
 
     <!-- ================= 8. データ取込 ================= -->
     <div id="view-import" class="view-section">
+      <!-- 勘定科目マスタの一括インポート -->
+      <div class="card">
+        <div class="card-header">
+          <span>勘定科目マスタの一括インポート (CSV / Excel)</span>
+          <button class="btn btn-outline btn-sm" onclick="downloadAccountMasterSampleCSV()">サンプルCSVをダウンロード</button>
+        </div>
+        <div class="card-body">
+          <div style="margin-bottom: 16px; padding: 12px; background-color: var(--freee-blue-subtle); border-radius: var(--radius-sm); border: 1px solid #bfe0ff; font-size: 0.86rem;">
+            <strong>【マスタインポート手順】</strong><br>
+            ・A列に<strong>勘定科目名</strong>、B列に<strong>性質（資産 / 負債 / 費用 / 収益 / 純資産）</strong>を入力したファイル(CSV または XLSX)を読み込みます。<br>
+            ・読み込み後、プレビューを確認して「勘定科目マスタをインポートする」ボタンを押すと一括登録されます。<br>
+            ※ 既に同一名称の勘定科目が存在する場合は性質が更新され、存在しない場合は新規登録されます。
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <input type="file" id="file-import-acc-input" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleAccountFileUpload(event)">
+            <button class="btn btn-primary" onclick="document.getElementById('file-import-acc-input').click()">
+              マスタファイルを選択
+            </button>
+            <span id="import-acc-file-name" style="margin-left: 12px; font-weight: 600; font-size: 0.9rem;"></span>
+          </div>
+
+          <div id="import-acc-preview-area" style="display: none;">
+            <div style="font-weight: 700; margin-bottom: 8px; font-size: 0.95rem;">
+              プレビュー: 正常に読み込めた勘定科目マスタ (<span id="import-acc-preview-count">0</span>件)
+            </div>
+            <div class="table-container" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: 12px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>勘定科目名</th>
+                    <th>性質 (区分)</th>
+                    <th>判定結果</th>
+                  </tr>
+                </thead>
+                <tbody id="import-acc-preview-tbody"></tbody>
+              </table>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button class="btn btn-primary" onclick="commitAccountImport()">勘定科目マスタをインポートする</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 仕訳一括インポート -->
       <div class="card">
         <div class="card-header">
           <span>CSV / Excel からの仕訳一括インポート</span>
@@ -2119,7 +2165,8 @@
           note,
           reconciliationId: null
         });
-        alert(`仕訳を登録しました。（判定: ${settled ? '決済済み' : '未決済'}）\n続けて入力できます。`);
+        alert(`仕訳を登録しました。（判定: ${settled ? '決済済み' : '未決済'}）
+続けて入力できます。`);
       }
 
       saveState();
@@ -3335,7 +3382,8 @@
       });
 
       saveState();
-      alert(`消込が完了しました。\n仕訳 (¥${targetAmt.toLocaleString()}) を記帳し、対象取引を決済済みに変更しました。`);
+      alert(`消込が完了しました。
+仕訳 (¥${targetAmt.toLocaleString()}) を記帳し、対象取引を決済済みに変更しました。`);
 
       document.getElementById('rec-target-amount').value = '';
       renderReconciliationView();
@@ -4098,10 +4146,169 @@
     }
 
     // ==========================================
-    // 8. データ取込
+    // 8. データ取込 (勘定科目マスタ取込 & 仕訳取込)
     // ==========================================
     let parsedImportRows = [];
+    let parsedAccountImportRows = [];
 
+    // --- 勘定科目マスタ取込 ---
+    function normalizeAccountType(rawType) {
+      if (!rawType) return null;
+      const t = String(rawType).trim();
+      if (t === '資産' || t.toLowerCase() === 'asset') return { key: 'asset', label: '資産' };
+      if (t === '負債' || t.toLowerCase() === 'liability') return { key: 'liability', label: '負債' };
+      if (t === '純資産' || t.toLowerCase() === 'equity') return { key: 'equity', label: '純資産' };
+      if (t === '収益' || t.toLowerCase() === 'revenue' || t === '売上') return { key: 'revenue', label: '収益' };
+      if (t === '費用' || t.toLowerCase() === 'expense' || t === '経費') return { key: 'expense', label: '費用' };
+      return null;
+    }
+
+    function handleAccountFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      document.getElementById('import-acc-file-name').textContent = `選択ファイル: ${file.name}`;
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          processAccountImportData(jsonRows);
+        } catch (err) {
+          console.error(err);
+          alert('勘定科目マスタファイルの読み込みに失敗しました。');
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function processAccountImportData(rows) {
+      parsedAccountImportRows = [];
+      let startIndex = 0;
+      // ヘッダー行判定（1行目が「勘定科目」「科目名」「name」など文字列ヘッダーの場合スキップ）
+      if (rows.length > 0 && rows[0][0]) {
+        const firstCol = String(rows[0][0]).trim();
+        const secondCol = String(rows[0][1] || '').trim();
+        if (firstCol.includes('科目') || firstCol.includes('勘定') || firstCol.toLowerCase() === 'account' || secondCol.includes('性質') || secondCol.includes('区分') || secondCol.toLowerCase() === 'type') {
+          startIndex = 1;
+        }
+      }
+
+      for (let i = startIndex; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length < 2) continue;
+
+        const name = String(r[0] || '').trim();
+        const rawType = String(r[1] || '').trim();
+        const normType = normalizeAccountType(rawType);
+
+        if (name && normType) {
+          parsedAccountImportRows.push({
+            name,
+            type: normType.key,
+            typeLabel: normType.label
+          });
+        }
+      }
+
+      renderAccountImportPreview();
+    }
+
+    function renderAccountImportPreview() {
+      const area = document.getElementById('import-acc-preview-area');
+      const tbody = document.getElementById('import-acc-preview-tbody');
+      document.getElementById('import-acc-preview-count').textContent = parsedAccountImportRows.length;
+
+      tbody.innerHTML = '';
+      if (parsedAccountImportRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:12px; color:var(--text-sub);">有効な勘定科目データが見つかりませんでした (A列:科目名, B列:資産/負債/費用/収益/純資産)</td></tr>`;
+      } else {
+        parsedAccountImportRows.forEach(r => {
+          const exists = appState.accounts.some(a => a.name === r.name);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${r.name}</strong></td>
+            <td><span class="badge badge-tag">${r.typeLabel}</span></td>
+            <td>${exists ? '<span class="badge" style="background:#f1f5f9; color:#475569;">既存(性質更新)</span>' : '<span class="badge badge-settled">新規追加</span>'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      area.style.display = 'block';
+    }
+
+    function commitAccountImport() {
+      if (parsedAccountImportRows.length === 0) return;
+
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      parsedAccountImportRows.forEach(r => {
+        const existing = appState.accounts.find(a => a.name === r.name);
+        if (existing) {
+          existing.type = r.type;
+          updatedCount++;
+        } else {
+          appState.accounts.push({
+            id: 'acc-' + Date.now() + Math.random().toString(36).substr(2, 4),
+            name: r.name,
+            type: r.type,
+            isUnsettled: false
+          });
+          addedCount++;
+        }
+      });
+
+      saveState();
+      refreshAllViews();
+      alert(`勘定科目マスタのインポートが完了しました。
+(新規追加: ${addedCount}件 / 更新: ${updatedCount}件)`);
+      
+      parsedAccountImportRows = [];
+      document.getElementById('import-acc-preview-area').style.display = 'none';
+      document.getElementById('file-import-acc-input').value = '';
+      document.getElementById('import-acc-file-name').textContent = '';
+      switchTab('master');
+    }
+
+    function downloadAccountMasterSampleCSV() {
+      const csvContent = "data:text/csv;charset=utf-8,﻿" +
+        "勘定科目名,性質
+" +
+        "現金,資産
+" +
+        "普通預金,資産
+" +
+        "クレジットカード,負債
+" +
+        "売上高,収益
+" +
+        "給与収入,収益
+" +
+        "食費,費用
+" +
+        "水道光熱費,費用
+" +
+        "元入金,純資産
+";
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "account_master_sample.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- 仕訳データ取込 ---
     function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -4234,10 +4441,13 @@
     }
 
     function downloadSampleCSV() {
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" +
-        "日付,借方勘定,借方金額,貸方勘定,貸方金額,品目,メモタグ,備考\n" +
-        "2026-08-14,食費,1800,現金,1800,スーパー,変動費,サンプルインポート1\n" +
-        "2026-08-15,交通費,460,普通預金,460,電車代,変動費,サンプルインポート2\n";
+      const csvContent = "data:text/csv;charset=utf-8,﻿" +
+        "日付,借方勘定,借方金額,貸方勘定,貸方金額,品目,メモタグ,備考
+" +
+        "2026-08-14,食費,1800,現金,1800,スーパー,変動費,サンプルインポート1
+" +
+        "2026-08-15,交通費,460,普通預金,460,電車代,変動費,サンプルインポート2
+";
 
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
