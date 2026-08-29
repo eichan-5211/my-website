@@ -841,7 +841,7 @@
       </div>
     </div>
 
-    <!-- ================= 4. カレンダー (Google予定・当初予算・実績を併せて表示) ================= -->
+    <!-- ================= 4. カレンダー (Google予定・当初予算・実績を同期表示) ================= -->
     <div id="view-calendar" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -850,8 +850,11 @@
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(-1)">前月</button>
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(1)">翌月</button>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-subtle btn-sm" onclick="syncGoogleCalendarEvents()">予定を同期</button>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.76rem; align-items: center;">
+            <span><strong style="color:var(--gcal-badge-text);">予定</strong></span>
+            <span><strong style="color:#475569;">予算</strong></span>
+            <span><strong style="color:var(--income-green);">実績収入</strong></span>
+            <span><strong style="color:var(--expense-coral);">実績費用</strong></span>
           </div>
         </div>
         <div class="card-body" style="padding: 10px;">
@@ -859,7 +862,6 @@
         </div>
       </div>
 
-      <!-- 日別明細カード (予定・予算・実績の3層比較表示) -->
       <div class="card" id="cal-day-detail-panel" style="display: none;">
         <div class="card-header">
           <span id="cal-day-detail-title">日付の詳細情報</span>
@@ -971,19 +973,38 @@
       </div>
     </div>
 
-    <!-- ================= 6. 予実管理 (複数日一括削除ボタン追加) ================= -->
+    <!-- ================= 6. 予実管理 (固定費・変動費分離 & 選択日一括削除) ================= -->
     <div id="view-budget" class="view-section">
+      <!-- 固定費設定カード -->
       <div class="card">
         <div class="card-header">
-          <span>費用 予実分析 & 着地予想 (2026年8月)</span>
-          <span style="font-size: 0.78rem; font-weight: 500; color: var(--text-sub);">
-            基準日: 8/13 (実績＋残予算)
-          </span>
+          <span>固定費の月額設定 (経過日に関わらず全額を算入)</span>
+        </div>
+        <div class="card-body">
+          <form onsubmit="saveFixedCostBudget(event)" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+            <select id="fixed-cost-acc" class="form-control" style="flex: 1 1 180px;" required></select>
+            <input type="number" id="fixed-cost-amt" class="form-control" placeholder="月額予算 (円)" required min="1" style="width: 150px;">
+            <button type="submit" class="btn btn-primary btn-sm">固定費を登録</button>
+          </form>
+          <div class="table-container" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <table>
+              <thead><tr><th>固定費勘定科目</th><th style="text-align: right;">月額予算 (円)</th><th style="width: 70px; text-align: center;">操作</th></tr></thead>
+              <tbody id="fixed-cost-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 変動費 着地予想サマリー -->
+      <div class="card">
+        <div class="card-header">
+          <span>費用 予実分析 & 着地予想 (固定費 ＋ 変動費)</span>
+          <span style="font-size: 0.78rem; font-weight: 500; color: var(--text-sub);">基準日: 8/13</span>
         </div>
         <div class="card-body">
           <div class="grid-4 kpi-grid-mobile" style="margin-bottom: 14px;">
             <div class="kpi-card">
-              <div class="kpi-title">月次総予算</div>
+              <div class="kpi-title">月次総予算 (固定＋変動)</div>
               <div class="kpi-val" id="kpi-total-budget">¥0</div>
             </div>
             <div class="kpi-card">
@@ -991,7 +1012,7 @@
               <div class="kpi-val" id="kpi-actual-amount" style="color: var(--freee-blue);">¥0</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-title">予算残 (8/14〜31)</div>
+              <div class="kpi-title">予算残 (変動費の残)</div>
               <div class="kpi-val" id="kpi-future-budget" style="color: var(--text-sub);">¥0</div>
             </div>
             <div class="kpi-card" style="background-color: var(--freee-blue-light); border-color: #bfe0ff;">
@@ -1026,11 +1047,11 @@
         </div>
       </div>
 
-      <!-- 日別予算設定カレンダー (複数日一括削除対応) -->
+      <!-- 変動費 カレンダー設定 -->
       <div class="card">
         <div class="card-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span>① 日別予算設定カレンダー</span>
+            <span>② 変動費 日別予算カレンダー</span>
             <span id="gcal-sync-badge" class="badge badge-gcal" style="display: none;">カレンダー連携中</span>
           </div>
           <div style="display: flex; gap: 6px;">
@@ -1042,7 +1063,7 @@
         <div class="filter-bar">
           <div class="grid-3">
             <div class="form-group" style="margin: 0;">
-              <label class="form-label">費用勘定科目</label>
+              <label class="form-label">費用勘定科目 (変動費)</label>
               <select id="budget-input-account" class="form-control"></select>
             </div>
             <div class="form-group" style="margin: 0;">
@@ -1385,6 +1406,10 @@
         { id: 'b-9', date: '2026-08-28', account: '通信費', amount: 8000 },
         { id: 'b-10', date: '2026-08-30', account: '食費', amount: 4000 }
       ],
+      fixedCosts: [
+        { id: 'fc-1', account: '住居費', amount: 85000 },
+        { id: 'fc-2', account: '通信費', amount: 8000 }
+      ],
       googleCalendarEvents: {},
       selectedBudgetDays: []
     };
@@ -1589,6 +1614,7 @@
           const data = doc.data();
           if (data && data.appState) {
             appState = data.appState;
+            if (!appState.fixedCosts) appState.fixedCosts = [];
           }
           if (data && data.username) {
             currentUsername = data.username;
@@ -1630,7 +1656,10 @@
       if (!isFirebaseAvailable && currentUserUid) {
         const saved = localStorage.getItem(`KAKEIBO_DATA_${currentUserUid}`);
         if (saved) {
-          try { appState = JSON.parse(saved); } catch(e) { console.error(e); }
+          try {
+            appState = JSON.parse(saved);
+            if (!appState.fixedCosts) appState.fixedCosts = [];
+          } catch(e) { console.error(e); }
         }
       }
     }
@@ -2700,7 +2729,7 @@
         }
       });
 
-      // 当初予算集計マップ
+      // 当初予算集計マップ（変動費カレンダー分）
       const budgetMap = {};
       appState.budgets.forEach(b => {
         const [y, m, d] = b.date.split('-').map(Number);
@@ -2727,20 +2756,24 @@
 
         let badges = '';
 
+        // ① Googleカレンダー予定
         if (appState.googleCalendarEvents && appState.googleCalendarEvents[dateStr]) {
           appState.googleCalendarEvents[dateStr].forEach(evt => {
             badges += `<div class="cal-gcal-event" title="予定: ${evt}">予定: ${evt}</div>`;
           });
         }
 
+        // ② 当初予算額
         if (bData.total > 0) {
           badges += `<div class="cal-budget-planned" title="当初予算: ¥${bData.total.toLocaleString()}">予算: ¥${bData.total.toLocaleString()}</div>`;
         }
 
+        // ③ 実績収入
         if (data.income > 0) {
           badges += `<div class="cal-income" title="収入実績: +¥${data.income.toLocaleString()}">+¥${data.income.toLocaleString()}</div>`;
         }
 
+        // ④ 実績費用
         if (data.expense > 0) {
           badges += `<div class="cal-expense" title="費用実績: -¥${data.expense.toLocaleString()}">-¥${data.expense.toLocaleString()}</div>`;
         }
@@ -2753,58 +2786,6 @@
         cell.onclick = () => showCalDayDetails(dateStr, data.items, bData);
         grid.appendChild(cell);
       }
-    }
-
-    function showCalDayDetails(dateStr, items, budgetData) {
-      const panel = document.getElementById('cal-day-detail-panel');
-      const title = document.getElementById('cal-day-detail-title');
-      const tbody = document.getElementById('cal-day-detail-tbody');
-      const gcalBox = document.getElementById('cal-day-gcal-box');
-      const gcalText = document.getElementById('cal-day-gcal-text');
-      const budgetSummary = document.getElementById('cal-day-budget-summary');
-      const budgetDetails = document.getElementById('cal-day-budget-details');
-
-      title.textContent = `【${dateStr}】の詳細情報 (予定・予算・実績)`;
-
-      if (appState.googleCalendarEvents && appState.googleCalendarEvents[dateStr]) {
-        gcalText.textContent = appState.googleCalendarEvents[dateStr].join(' / ');
-        gcalBox.style.display = 'block';
-      } else {
-        gcalBox.style.display = 'none';
-      }
-
-      if (budgetData && budgetData.total > 0) {
-        budgetSummary.textContent = `¥${budgetData.total.toLocaleString()}`;
-        budgetDetails.textContent = budgetData.list.map(b => `${b.account}: ¥${b.amount.toLocaleString()}`).join(' | ');
-      } else {
-        budgetSummary.textContent = '¥0 (予算未設定)';
-        budgetDetails.textContent = '';
-      }
-
-      tbody.innerHTML = '';
-      if (!items || items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 14px; color: var(--text-sub);">取引実績はありません</td></tr>`;
-      } else {
-        items.forEach(j => {
-          const debStr = j.debits.map(d => `${d.account}: ¥${d.amount.toLocaleString()}`).join('<br>');
-          const crStr = j.credits.map(c => `${c.account}: ¥${c.amount.toLocaleString()}`).join('<br>');
-          const amt = j.debits.reduce((s, x) => s + x.amount, 0);
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${debStr}</td>
-            <td>${crStr}</td>
-            <td style="font-weight: 700;">¥${amt.toLocaleString()}</td>
-            <td>${j.item ? `<span class="badge badge-item">${j.item}</span>` : '-'}</td>
-            <td>${j.tag ? `<span class="badge badge-tag">${j.tag}</span>` : '-'}</td>
-            <td style="color: var(--text-sub);">${j.note || '-'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
-
-      panel.style.display = 'block';
-      panel.scrollIntoView({ behavior: 'smooth' });
     }
 
     // ==========================================
@@ -2982,11 +2963,63 @@
     // 予実管理
     // ==========================================
     function renderBudgetView() {
+      if (!appState.fixedCosts) appState.fixedCosts = [];
+
       const accSelect = document.getElementById('budget-input-account');
       accSelect.innerHTML = appState.accounts.filter(a => a.type === 'expense').map(a => `<option value="${a.name}">${a.name}</option>`).join('');
 
+      const fcAccSelect = document.getElementById('fixed-cost-acc');
+      fcAccSelect.innerHTML = appState.accounts.filter(a => a.type === 'expense').map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+
+      renderFixedCostTable();
       renderBudgetAnalysis();
       renderBudgetCalendar();
+    }
+
+    function renderFixedCostTable() {
+      const tbody = document.getElementById('fixed-cost-tbody');
+      tbody.innerHTML = '';
+
+      if (appState.fixedCosts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:12px; color:var(--text-sub);">固定費の登録はありません</td></tr>`;
+        return;
+      }
+
+      appState.fixedCosts.forEach(fc => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${fc.account}</strong></td>
+          <td style="text-align:right; font-weight:600;">¥${fc.amount.toLocaleString()}</td>
+          <td style="text-align:center;"><button type="button" class="btn btn-outline btn-sm" onclick="deleteFixedCost('${fc.id}')" style="color:#cf1322;">削除</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function saveFixedCostBudget(e) {
+      e.preventDefault();
+      const account = document.getElementById('fixed-cost-acc').value;
+      const amount = Number(document.getElementById('fixed-cost-amt').value);
+
+      if (!account || amount <= 0) return;
+
+      appState.fixedCosts = appState.fixedCosts.filter(fc => fc.account !== account);
+      appState.fixedCosts.push({
+        id: 'fc-' + Date.now(),
+        account,
+        amount
+      });
+
+      saveState();
+      document.getElementById('fixed-cost-amt').value = '';
+      renderBudgetView();
+      alert(`固定費【${account}: 月額 ¥${amount.toLocaleString()}】を登録しました。`);
+    }
+
+    function deleteFixedCost(id) {
+      appState.fixedCosts = appState.fixedCosts.filter(fc => fc.id !== id);
+      saveState();
+      renderBudgetView();
     }
 
     function renderBudgetAnalysis() {
@@ -3004,10 +3037,23 @@
           budget14To31: 0,
           landing: 0,
           diff: 0,
-          percent: 0
+          percent: 0,
+          isFixed: false
         };
       });
 
+      // 固定費の算入 (経過日に関わらず月額全額を予算・着地予想に含める)
+      if (appState.fixedCosts) {
+        appState.fixedCosts.forEach(fc => {
+          if (analysisMap[fc.account]) {
+            analysisMap[fc.account].totalBudget += fc.amount;
+            analysisMap[fc.account].budget14To31 += fc.amount;
+            analysisMap[fc.account].isFixed = true;
+          }
+        });
+      }
+
+      // 変動費（カレンダー予算）の算入
       appState.budgets.forEach(b => {
         if (b.date >= START_DATE && b.date <= END_DATE && analysisMap[b.account]) {
           analysisMap[b.account].totalBudget += b.amount;
@@ -3017,6 +3063,7 @@
         }
       });
 
+      // 実績 (8/1〜8/13)
       appState.journals.forEach(j => {
         if (j.date >= START_DATE && j.date <= REF_DATE) {
           j.debits.forEach(d => {
@@ -3039,13 +3086,19 @@
 
       expenseAccounts.forEach(acc => {
         const item = analysisMap[acc];
-        item.landing = item.actual1To13 + item.budget14To31;
+        if (item.isFixed) {
+          item.landing = Math.max(item.actual1To13, item.totalBudget);
+          item.budget14To31 = 0;
+        } else {
+          item.landing = item.actual1To13 + item.budget14To31;
+        }
+
         item.diff = item.landing - item.totalBudget;
         item.percent = item.totalBudget > 0 ? (item.landing / item.totalBudget) * 100 : (item.landing > 0 ? 100 : 0);
 
         sumTotalBudget += item.totalBudget;
         sumActual1To13 += item.actual1To13;
-        sumBudget14To31 += item.budget14To31;
+        sumBudget14To31 += (item.isFixed ? 0 : item.budget14To31);
         sumLanding += item.landing;
       });
 
@@ -3071,15 +3124,17 @@
 
       expenseAccounts.forEach(acc => {
         const item = analysisMap[acc];
+        if (item.totalBudget === 0 && item.actual1To13 === 0) return;
+
         const tr = document.createElement('tr');
         const diffStyle = item.diff > 0 ? 'color:#cf1322; font-weight:700;' : 'color:var(--income-green); font-weight:700;';
         const dSign = item.diff > 0 ? '＋' : (item.diff < 0 ? '－' : '');
 
         tr.innerHTML = `
-          <td><strong>${acc}</strong></td>
+          <td><strong>${acc}</strong> ${item.isFixed ? '<span class="badge" style="background:#f1f5f9; color:#475569;">固定費</span>' : ''}</td>
           <td style="text-align: right;">¥${item.totalBudget.toLocaleString()}</td>
           <td style="text-align: right;">¥${item.actual1To13.toLocaleString()}</td>
-          <td style="text-align: right;">¥${item.budget14To31.toLocaleString()}</td>
+          <td style="text-align: right;">¥${item.isFixed ? '-' : item.budget14To31.toLocaleString()}</td>
           <td style="text-align: right; font-weight: 700;">¥${item.landing.toLocaleString()}</td>
           <td style="text-align: right; ${diffStyle}">${dSign}¥${Math.abs(item.diff).toLocaleString()}</td>
           <td style="text-align: right; ${diffStyle}">${item.percent.toFixed(1)}%</td>
@@ -3183,13 +3238,12 @@
       renderBudgetCalendar();
     }
 
-    // 選択された複数日の予算を一括削除
     function bulkDeleteSelectedBudgets() {
       if (appState.selectedBudgetDays.length === 0) {
         alert('カレンダーから削除対象の日付を1日以上選択してください。');
         return;
       }
-      if (!confirm(`選択された ${appState.selectedBudgetDays.length} 日間に設定されているすべての予算を削除しますか？`)) return;
+      if (!confirm(`選択された ${appState.selectedBudgetDays.length} 日間に設定されているすべての変動費予算を削除しますか？`)) return;
 
       appState.budgets = appState.budgets.filter(b => !appState.selectedBudgetDays.includes(b.date));
       saveState();
@@ -3224,7 +3278,7 @@
       });
 
       saveState();
-      alert(`選択した ${appState.selectedBudgetDays.length} 日間に【${account}: ¥${amount.toLocaleString()}】の予算を設定しました。`);
+      alert(`選択した ${appState.selectedBudgetDays.length} 日間に【${account}: ¥${amount.toLocaleString()}】の変動費予算を設定しました。`);
 
       appState.selectedBudgetDays = [];
       document.getElementById('budget-input-amount').value = '';
@@ -3239,7 +3293,7 @@
       const gcalInfo = document.getElementById('budget-day-gcal-info');
       const gcalText = document.getElementById('budget-day-gcal-text');
 
-      title.textContent = `【${dateStr}】の予算設定 & 編集`;
+      title.textContent = `【${dateStr}】の変動費予算設定 & 編集`;
       document.getElementById('direct-budget-date').value = dateStr;
 
       if (appState.googleCalendarEvents && appState.googleCalendarEvents[dateStr]) {
@@ -3264,7 +3318,7 @@
 
       tbody.innerHTML = '';
       if (dayBudgets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:16px; color:var(--text-sub);">設定された予算はありません</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:16px; color:var(--text-sub);">設定された変動費予算はありません</td></tr>`;
       } else {
         dayBudgets.forEach(b => {
           const tr = document.createElement('tr');
