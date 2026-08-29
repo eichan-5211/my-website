@@ -1531,7 +1531,7 @@
       console.warn("Firebase初期化エラー:", e);
     }
 
-    // ==========================================
+        // ==========================================
     // ユーザー認証 & 同期管理
     // ==========================================
     let currentUserUid = null;
@@ -1562,21 +1562,27 @@
 
     function setAuthMode(mode) {
       authMode = mode;
-      document.getElementById('auth-error-msg').style.display = 'none';
+      const errorMsg = document.getElementById('auth-error-msg');
+      if (errorMsg) errorMsg.style.display = 'none';
+
+      const tabLogin = document.getElementById('tab-btn-login');
+      const tabRegister = document.getElementById('tab-btn-register');
+      const submitBtn = document.getElementById('auth-submit-btn');
+
       if (mode === 'login') {
-        document.getElementById('tab-btn-login').classList.add('active');
-        document.getElementById('tab-btn-register').classList.remove('active');
-        document.getElementById('auth-submit-btn').textContent = 'ログイン';
+        if (tabLogin) tabLogin.classList.add('active');
+        if (tabRegister) tabRegister.classList.remove('active');
+        if (submitBtn) submitBtn.textContent = 'ログイン';
       } else {
-        document.getElementById('tab-btn-login').classList.remove('active');
-        document.getElementById('tab-btn-register').classList.add('active');
-        document.getElementById('auth-submit-btn').textContent = 'アカウントを作成して始める';
+        if (tabLogin) tabLogin.classList.remove('active');
+        if (tabRegister) tabRegister.classList.add('active');
+        if (submitBtn) submitBtn.textContent = 'アカウントを作成して始める';
       }
     }
 
     async function handleGoogleSignIn() {
-      if (!isFirebaseAvailable) {
-        alert("Firebase設定が有効になっていません。");
+      if (!isFirebaseAvailable || !auth) {
+        alert("Firebaseが利用できない環境のため、Googleログインは使用できません。ID/パスワードでのログインをご利用ください。");
         return;
       }
       try {
@@ -1595,155 +1601,48 @@
 
         onLoginSuccess(currentUserUid, currentUsername);
       } catch (err) {
-        console.error("Googleサインイン失敗:", err);
-        alert("Googleログインに失敗しました: " + err.message);
+        console.error("Googleサインインエラー:", err);
+        let msg = "Googleログインに失敗しました: " + (err.message || err);
+        if (location.protocol === 'file:') {
+          msg += "
+
+※HTMLファイルを直接開いている場合(file://)、Googleのセキュリティ仕様によりポップアップログインが制限されます。ID/パスワードでの登録・ログインをご利用ください。";
+        }
+        alert(msg);
       }
-    }
-
-    // Googleカレンダー手動同期（クリックした月のみGoogle APIから取得）
-    async function syncGoogleCalendarEvents(targetDate = currentCalDate) {
-      if (!googleAccessToken) {
-        googleAccessToken = sessionStorage.getItem('GOOGLE_ACCESS_TOKEN');
-      }
-
-      if (!googleAccessToken) {
-        try {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          provider.addScope('https://www.googleapis.com/auth/calendar.events');
-          const result = await auth.signInWithPopup(provider);
-          if (result.credential) {
-            googleAccessToken = result.credential.accessToken;
-            sessionStorage.setItem('GOOGLE_ACCESS_TOKEN', googleAccessToken);
-          }
-        } catch (err) {
-          alert("カレンダーアクセスの許可が必要です。");
-          return;
-        }
-      }
-
-      const y = targetDate.getFullYear();
-      const m = targetDate.getMonth();
-
-      try {
-        const timeMin = new Date(y, m, 1).toISOString();
-        const timeMax = new Date(y, m + 1, 0, 23, 59, 59).toISOString();
-        const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
-
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-        });
-
-        if (res.status === 401) {
-          googleAccessToken = null;
-          sessionStorage.removeItem('GOOGLE_ACCESS_TOKEN');
-          return syncGoogleCalendarEvents(targetDate);
-        }
-
-        if (!res.ok) throw new Error("API request failed");
-        const data = await res.json();
-
-        // 該当月以外の既存データを保持しつつ、該当月のみを完全にクリアしてGoogleカレンダーデータで更新
-        if (!appState.googleCalendarEvents) appState.googleCalendarEvents = {};
-        const prefix = `${y}-${String(m + 1).padStart(2, '0')}`;
-        Object.keys(appState.googleCalendarEvents).forEach(k => {
-          if (k.startsWith(prefix)) delete appState.googleCalendarEvents[k];
-        });
-
-        if (data.items) {
-          data.items.forEach(item => {
-            const start = item.start.dateTime || item.start.date;
-            if (start) {
-              const dateStr = start.split('T')[0];
-              if (!appState.googleCalendarEvents[dateStr]) appState.googleCalendarEvents[dateStr] = [];
-              appState.googleCalendarEvents[dateStr].push({ id: item.id, summary: item.summary || '(無題)' });
-            }
-          });
-        }
-
-        saveState();
-        renderBudgetView();
-        renderCalendar();
-        document.getElementById('sync-status-indicator').textContent = 'クラウド同期完了';
-        alert(`${y}年${m+1}月の予定をGoogleカレンダーから同期しました。`);
-      } catch (err) {
-        console.warn("Googleカレンダー取得エラー:", err);
-        alert("カレンダー同期に失敗しました: " + err.message);
-      }
-    }
-
-    // Googleカレンダー予定編集・削除
-    function openGCalEditModal(id, summary) {
-      document.getElementById('gcal-edit-id').value = id;
-      document.getElementById('gcal-edit-summary').value = summary;
-      document.getElementById('gcal-edit-modal').classList.add('active');
-    }
-
-    function closeGCalEditModal() {
-      document.getElementById('gcal-edit-modal').classList.remove('active');
-    }
-
-    async function updateGCalEvent() {
-      if (!googleAccessToken) return;
-      const id = document.getElementById('gcal-edit-id').value;
-      const summary = document.getElementById('gcal-edit-summary').value.trim();
-      if (!summary) return;
-
-      const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${id}`;
-      try {
-        const res = await fetch(url, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${googleAccessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ summary })
-        });
-        if (res.ok) {
-          alert("予定を更新しました。");
-          closeGCalEditModal();
-          syncGoogleCalendarEvents(currentCalDate);
-        } else {
-          alert("更新に失敗しました。");
-        }
-      } catch(e) { console.error(e); }
-    }
-
-    async function deleteGCalEvent() {
-      if (!googleAccessToken) return;
-      if (!confirm("本当にこの予定をGoogleカレンダーから削除しますか？")) return;
-      const id = document.getElementById('gcal-edit-id').value;
-
-      const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${id}`;
-      try {
-        const res = await fetch(url, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-        });
-        if (res.ok || res.status === 204) {
-          alert("予定を削除しました。");
-          closeGCalEditModal();
-          syncGoogleCalendarEvents(currentCalDate);
-        } else {
-          alert("削除に失敗しました。");
-        }
-      } catch(e) { console.error(e); }
     }
 
     function formatAuthEmail(input) {
       return input.includes('@') ? input : `${input.toLowerCase()}@kakeibo.local`;
     }
 
-    // 新規登録時の既存データ上書きを防止
     async function handleAuth(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       const rawUser = document.getElementById('auth-username').value.trim();
       const password = document.getElementById('auth-password').value;
       const errorMsg = document.getElementById('auth-error-msg');
       const email = formatAuthEmail(rawUser);
 
-      errorMsg.style.display = 'none';
+      if (errorMsg) errorMsg.style.display = 'none';
 
-      if (!isFirebaseAvailable) {
+      if (!rawUser || !password) {
+        if (errorMsg) {
+          errorMsg.textContent = 'アカウントIDとパスワードを入力してください。';
+          errorMsg.style.display = 'block';
+        }
+        return;
+      }
+
+      if (password.length < 6) {
+        if (errorMsg) {
+          errorMsg.textContent = 'パスワードは6文字以上で設定してください。';
+          errorMsg.style.display = 'block';
+        }
+        return;
+      }
+
+      // Firebaseがオフライン/未設定/エラー時はローカル保存へ自動フォールバック
+      if (!isFirebaseAvailable || !auth) {
         handleLocalStorageAuth(rawUser, password);
         return;
       }
@@ -1754,29 +1653,46 @@
           currentUserUid = userCredential.user.uid;
           currentUsername = rawUser;
 
-          // すでにドキュメントが存在するかチェックし、存在しない場合のみ新規作成
-          const docRef = db.collection('users').doc(currentUserUid);
-          const docSnap = await docRef.get();
-          if (!docSnap.exists) {
-            await docRef.set({
-              username: rawUser,
-              appState: defaultInitialState,
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+          try {
+            const docRef = db.collection('users').doc(currentUserUid);
+            const docSnap = await docRef.get();
+            if (!docSnap.exists) {
+              await docRef.set({
+                username: rawUser,
+                appState: defaultInitialState,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            }
+          } catch (dbErr) {
+            console.warn("Firestore初期化エラー (ローカルモードにフォールバック):", dbErr);
           }
+          onLoginSuccess(currentUserUid, currentUsername);
         } else {
           const userCredential = await auth.signInWithEmailAndPassword(email, password);
           currentUserUid = userCredential.user.uid;
           currentUsername = rawUser;
+          onLoginSuccess(currentUserUid, currentUsername);
         }
       } catch (err) {
-        console.error(err);
+        console.warn("Firebase認証失敗:", err);
+        // Firebaseでエラーが出た場合（未登録ドメイン、通信不通など）、ローカルストレージ認証に切り替えて実行を試みる
+        if (err.code === 'auth/network-request-failed' || err.code === 'auth/operation-not-allowed' || err.code === 'auth/unauthorized-domain' || location.protocol === 'file:') {
+          handleLocalStorageAuth(rawUser, password);
+          return;
+        }
+
         let msg = 'ログインに失敗しました。';
         if (err.code === 'auth/email-already-in-use') msg = 'そのアカウントIDは既に使用されています。';
-        if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') msg = 'IDまたはパスワードが正しくありません。';
-        if (err.code === 'auth/weak-password') msg = 'パスワードは6文字以上で設定してください。';
-        errorMsg.textContent = msg;
-        errorMsg.style.display = 'block';
+        else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') msg = 'IDまたはパスワードが正しくありません。';
+        else if (err.code === 'auth/weak-password') msg = 'パスワードは6文字以上で設定してください。';
+        else if (err.message) msg = err.message;
+        
+        if (errorMsg) {
+          errorMsg.textContent = msg;
+          errorMsg.style.display = 'block';
+        } else {
+          alert(msg);
+        }
       }
     }
 
@@ -1786,19 +1702,28 @@
 
       if (authMode === 'register') {
         if (users.some(x => x.username === u)) {
-          errorMsg.textContent = 'そのアカウントIDは既に使用されています。';
-          errorMsg.style.display = 'block';
+          if (errorMsg) {
+            errorMsg.textContent = 'そのアカウントIDは既に使用されています。';
+            errorMsg.style.display = 'block';
+          } else {
+            alert('そのアカウントIDは既に使用されています。');
+          }
           return;
         }
         users.push({ username: u, password: p });
         localStorage.setItem('KAKEIBO_USERS_FALLBACK', JSON.stringify(users));
         localStorage.setItem(`KAKEIBO_DATA_${u}`, JSON.stringify(defaultInitialState));
+        alert('アカウントを作成しました（オフライン/ローカル保存モード）。');
         onLoginSuccess(u, u);
       } else {
         const found = users.find(x => x.username === u && x.password === p);
         if (!found) {
-          errorMsg.textContent = 'アカウントIDまたはパスワードが正しくありません。';
-          errorMsg.style.display = 'block';
+          if (errorMsg) {
+            errorMsg.textContent = 'アカウントIDまたはパスワードが正しくありません。新規登録を行ってください。';
+            errorMsg.style.display = 'block';
+          } else {
+            alert('アカウントIDまたはパスワードが正しくありません。新規登録を行ってください。');
+          }
           return;
         }
         onLoginSuccess(u, u);
