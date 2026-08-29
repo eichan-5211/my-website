@@ -841,7 +841,7 @@
       </div>
     </div>
 
-    <!-- ================= 4. カレンダー ================= -->
+    <!-- ================= 4. カレンダー (Google予定・当初予算・実績を併せて表示) ================= -->
     <div id="view-calendar" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -850,11 +850,8 @@
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(-1)">前月</button>
             <button class="btn btn-outline btn-sm" onclick="changeCalMonth(1)">翌月</button>
           </div>
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.76rem; align-items: center;">
-            <span><strong style="color:var(--gcal-badge-text);">予定</strong></span>
-            <span><strong style="color:#475569;">予算</strong></span>
-            <span><strong style="color:var(--income-green);">実績収入</strong></span>
-            <span><strong style="color:var(--expense-coral);">実績費用</strong></span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-subtle btn-sm" onclick="syncGoogleCalendarEvents()">予定を同期</button>
           </div>
         </div>
         <div class="card-body" style="padding: 10px;">
@@ -862,6 +859,7 @@
         </div>
       </div>
 
+      <!-- 日別明細カード (予定・予算・実績の3層比較表示) -->
       <div class="card" id="cal-day-detail-panel" style="display: none;">
         <div class="card-header">
           <span id="cal-day-detail-title">日付の詳細情報</span>
@@ -973,7 +971,7 @@
       </div>
     </div>
 
-    <!-- ================= 6. 予実管理 ================= -->
+    <!-- ================= 6. 予実管理 (複数日一括削除ボタン追加) ================= -->
     <div id="view-budget" class="view-section">
       <div class="card">
         <div class="card-header">
@@ -1028,6 +1026,7 @@
         </div>
       </div>
 
+      <!-- 日別予算設定カレンダー (複数日一括削除対応) -->
       <div class="card">
         <div class="card-header">
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -1036,6 +1035,7 @@
           </div>
           <div style="display: flex; gap: 6px;">
             <button class="btn btn-subtle btn-sm" onclick="syncGoogleCalendarEvents()">予定を同期</button>
+            <button class="btn btn-danger btn-sm" onclick="bulkDeleteSelectedBudgets()">選択日の予算を一括削除</button>
             <button class="btn btn-outline btn-sm" onclick="clearSelectedBudgetDays()">選択解除</button>
           </div>
         </div>
@@ -2651,7 +2651,7 @@
     }
 
     // ==========================================
-    // カレンダー
+    // 4. カレンダー (Google予定・当初予算・実績を同期表示)
     // ==========================================
     let currentCalDate = new Date(2026, 7, 1);
 
@@ -2684,6 +2684,7 @@
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
 
+      // 実績集計
       const dailyTotals = {};
       appState.journals.forEach(j => {
         const [y, m, d] = j.date.split('-').map(Number);
@@ -2699,6 +2700,17 @@
         }
       });
 
+      // 当初予算集計マップ
+      const budgetMap = {};
+      appState.budgets.forEach(b => {
+        const [y, m, d] = b.date.split('-').map(Number);
+        if (y === year && m === month + 1) {
+          if (!budgetMap[d]) budgetMap[d] = { total: 0, list: [] };
+          budgetMap[d].total += b.amount;
+          budgetMap[d].list.push(b);
+        }
+      });
+
       for (let i = firstDayIdx - 1; i >= 0; i--) {
         const cell = document.createElement('div');
         cell.className = 'calendar-cell other-month';
@@ -2711,27 +2723,67 @@
         cell.className = 'calendar-cell';
         const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const data = dailyTotals[day] || { income: 0, expense: 0, items: [] };
+        const bData = budgetMap[day] || { total: 0, list: [] };
 
-        let content = `<span class="cal-date-num">${day}</span>`;
-        if (data.income > 0) content += `<div class="cal-income">+¥${data.income.toLocaleString()}</div>`;
-        if (data.expense > 0) content += `<div class="cal-expense">-¥${data.expense.toLocaleString()}</div>`;
+        let badges = '';
 
-        cell.innerHTML = content;
-        cell.onclick = () => showCalDayDetails(dateStr, data.items);
+        if (appState.googleCalendarEvents && appState.googleCalendarEvents[dateStr]) {
+          appState.googleCalendarEvents[dateStr].forEach(evt => {
+            badges += `<div class="cal-gcal-event" title="予定: ${evt}">予定: ${evt}</div>`;
+          });
+        }
+
+        if (bData.total > 0) {
+          badges += `<div class="cal-budget-planned" title="当初予算: ¥${bData.total.toLocaleString()}">予算: ¥${bData.total.toLocaleString()}</div>`;
+        }
+
+        if (data.income > 0) {
+          badges += `<div class="cal-income" title="収入実績: +¥${data.income.toLocaleString()}">+¥${data.income.toLocaleString()}</div>`;
+        }
+
+        if (data.expense > 0) {
+          badges += `<div class="cal-expense" title="費用実績: -¥${data.expense.toLocaleString()}">-¥${data.expense.toLocaleString()}</div>`;
+        }
+
+        cell.innerHTML = `
+          <span class="cal-date-num">${day}</span>
+          ${badges}
+        `;
+
+        cell.onclick = () => showCalDayDetails(dateStr, data.items, bData);
         grid.appendChild(cell);
       }
     }
 
-    function showCalDayDetails(dateStr, items) {
+    function showCalDayDetails(dateStr, items, budgetData) {
       const panel = document.getElementById('cal-day-detail-panel');
       const title = document.getElementById('cal-day-detail-title');
       const tbody = document.getElementById('cal-day-detail-tbody');
+      const gcalBox = document.getElementById('cal-day-gcal-box');
+      const gcalText = document.getElementById('cal-day-gcal-text');
+      const budgetSummary = document.getElementById('cal-day-budget-summary');
+      const budgetDetails = document.getElementById('cal-day-budget-details');
 
-      title.textContent = `【${dateStr}】の仕訳明細一覧 (${items.length}件)`;
+      title.textContent = `【${dateStr}】の詳細情報 (予定・予算・実績)`;
+
+      if (appState.googleCalendarEvents && appState.googleCalendarEvents[dateStr]) {
+        gcalText.textContent = appState.googleCalendarEvents[dateStr].join(' / ');
+        gcalBox.style.display = 'block';
+      } else {
+        gcalBox.style.display = 'none';
+      }
+
+      if (budgetData && budgetData.total > 0) {
+        budgetSummary.textContent = `¥${budgetData.total.toLocaleString()}`;
+        budgetDetails.textContent = budgetData.list.map(b => `${b.account}: ¥${b.amount.toLocaleString()}`).join(' | ');
+      } else {
+        budgetSummary.textContent = '¥0 (予算未設定)';
+        budgetDetails.textContent = '';
+      }
+
       tbody.innerHTML = '';
-
-      if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 18px; color: var(--text-sub);">仕訳データはありません</td></tr>`;
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 14px; color: var(--text-sub);">取引実績はありません</td></tr>`;
       } else {
         items.forEach(j => {
           const debStr = j.debits.map(d => `${d.account}: ¥${d.amount.toLocaleString()}`).join('<br>');
@@ -3127,6 +3179,23 @@
     }
 
     function clearSelectedBudgetDays() {
+      appState.selectedBudgetDays = [];
+      renderBudgetCalendar();
+    }
+
+    // 選択された複数日の予算を一括削除
+    function bulkDeleteSelectedBudgets() {
+      if (appState.selectedBudgetDays.length === 0) {
+        alert('カレンダーから削除対象の日付を1日以上選択してください。');
+        return;
+      }
+      if (!confirm(`選択された ${appState.selectedBudgetDays.length} 日間に設定されているすべての予算を削除しますか？`)) return;
+
+      appState.budgets = appState.budgets.filter(b => !appState.selectedBudgetDays.includes(b.date));
+      saveState();
+      renderBudgetView();
+      renderCalendar();
+      alert('選択日の予算を一括削除しました。');
       appState.selectedBudgetDays = [];
       renderBudgetCalendar();
     }
