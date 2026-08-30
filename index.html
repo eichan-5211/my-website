@@ -2965,6 +2965,7 @@
       thead += `<th style="text-align: right; width: 90px; background-color: var(--freee-blue-light); color: var(--freee-blue);">年間合計</th></tr></thead>`;
 
       let tbody = '<tbody>';
+      const grandTotalMonths = Array(12).fill(0); // 収益 - 費用 (純利益) 用
       ['revenue', 'expense'].forEach(tKey => {
         const catAccs = Object.entries(matrix).filter(([name, data]) => data.type === tKey);
         if (catAccs.length === 0) return;
@@ -2984,7 +2985,32 @@
           });
           tbody += `<td style="text-align: right; background-color: var(--freee-blue-subtle);"><span class="clickable-amount" onclick="openTrendDrilldown('${accName}', 'ALL')">¥${data.total.toLocaleString()}</span></td></tr>`;
         });
+
+        // 区分ごとの月次合計行
+        const catMonthTotals = Array(12).fill(0);
+        catAccs.forEach(([, data]) => {
+          data.months.forEach((amt, mIdx) => { catMonthTotals[mIdx] += amt; });
+        });
+        const catGrandTotal = catMonthTotals.reduce((s, v) => s + v, 0);
+        const totalColor = tKey === 'revenue' ? 'var(--income-green)' : 'var(--expense-coral)';
+        tbody += `<tr style="background-color: #f1f5f9; font-weight: 700;"><td>${tKey === 'revenue' ? '収益合計' : '費用合計'}</td>`;
+        catMonthTotals.forEach(amt => {
+          tbody += `<td style="text-align: right; color: ${totalColor};">¥${amt.toLocaleString()}</td>`;
+        });
+        tbody += `<td style="text-align: right; background-color: var(--freee-blue-light); color: ${totalColor};">¥${catGrandTotal.toLocaleString()}</td></tr>`;
+
+        catMonthTotals.forEach((amt, mIdx) => {
+          grandTotalMonths[mIdx] += (tKey === 'revenue' ? amt : -amt);
+        });
       });
+
+      // 当期純利益 (収益合計 - 費用合計) の月次推移
+      const netGrandTotal = grandTotalMonths.reduce((s, v) => s + v, 0);
+      tbody += `<tr style="background-color: var(--freee-blue-light); font-weight: 700;"><td>当期純利益 (収益－費用)</td>`;
+      grandTotalMonths.forEach(amt => {
+        tbody += `<td style="text-align: right; color: var(--freee-blue);">¥${amt.toLocaleString()}</td>`;
+      });
+      tbody += `<td style="text-align: right; background-color: var(--freee-blue-light); color: var(--freee-blue);">¥${netGrandTotal.toLocaleString()}</td></tr>`;
 
       tbody += '</tbody>';
       table.innerHTML = thead + tbody;
@@ -3033,6 +3059,7 @@
       thead += `</tr></thead>`;
 
       let tbody = '<tbody>';
+      const catGrandTotals = { asset: Array(12).fill(0), liability: Array(12).fill(0), equity: Array(12).fill(0) };
       ['asset', 'liability', 'equity'].forEach(tKey => {
         const catAccs = Object.entries(matrix).filter(([name, data]) => data.type === tKey);
         if (catAccs.length === 0) return;
@@ -3051,8 +3078,30 @@
             }
           });
           tbody += `</tr>`;
+
+          data.months.forEach((amt, mIdx) => { catGrandTotals[tKey][mIdx] += amt; });
         });
+
+        // 区分ごとの月末合計行
+        const labelTotal = { asset: '資産合計', liability: '負債合計', equity: '純資産合計' };
+        const colorTotal = { asset: 'var(--freee-blue)', liability: '#ef4444', equity: 'var(--income-green)' };
+        tbody += `<tr style="background-color: #f1f5f9; font-weight: 700;"><td>${labelTotal[tKey]}</td>`;
+        catGrandTotals[tKey].forEach(amt => {
+          tbody += `<td style="text-align: right; color: ${colorTotal[tKey]};">¥${amt.toLocaleString()}</td>`;
+        });
+        tbody += `</tr>`;
       });
+
+      // 負債・純資産合計 (貸借バランス確認用)
+      const liabPlusEquity = Array(12).fill(0);
+      for (let mIdx = 0; mIdx < 12; mIdx++) {
+        liabPlusEquity[mIdx] = catGrandTotals.liability[mIdx] + catGrandTotals.equity[mIdx];
+      }
+      tbody += `<tr style="background-color: var(--income-bg); font-weight: 700;"><td>負債・純資産合計</td>`;
+      liabPlusEquity.forEach(amt => {
+        tbody += `<td style="text-align: right; color: var(--income-green);">¥${amt.toLocaleString()}</td>`;
+      });
+      tbody += `</tr>`;
 
       tbody += '</tbody>';
       table.innerHTML = thead + tbody;
