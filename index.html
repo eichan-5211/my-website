@@ -779,9 +779,29 @@
       <div class="card">
         <div class="card-header">
           <span>財務諸表・グラフ分析レポート</span>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <label class="form-label" style="margin: 0; font-size: 0.8rem;">基準年月:</label>
-            <input type="month" id="report-month" class="form-control" style="width: 140px; padding: 4px 8px;" onchange="renderReports()">
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label class="form-label" style="margin: 0; font-size: 0.8rem;">基準年月 (①②用):</label>
+              <input type="month" id="report-month" class="form-control" style="width: 140px; padding: 4px 8px;" onchange="renderReports()">
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label class="form-label" style="margin: 0; font-size: 0.8rem;">表示年 (③④⑤用):</label>
+              <select id="trend-year-select" class="form-control" style="width: 100px; padding: 4px 8px;" onchange="renderReports()"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body" style="border-bottom: 1px solid var(--border-color); background-color: #fafbfc;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 0.86rem;">
+              <strong>月次締め処理:</strong>
+              <span style="color: var(--text-sub); margin-left: 6px;">「基準年月」で選択中の月 (<span id="close-target-month-label">-</span>) を対象とします。</span>
+              <div style="margin-top: 4px;">状態: <span id="close-status-badge" class="badge badge-unsettled">未締め</span></div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btn-close-month" class="btn btn-primary btn-sm" onclick="closeAccountingMonth()">この月を締める</button>
+              <button type="button" id="btn-reopen-month" class="btn btn-danger btn-sm" style="display:none;" onclick="reopenAccountingMonth()">締めを解除する</button>
+            </div>
           </div>
         </div>
 
@@ -1632,7 +1652,8 @@
       budgets: [],
       fixedCosts: [],
       googleCalendarEvents: {},
-      selectedBudgetDays: []
+      selectedBudgetDays: [],
+      closedMonths: []
     };
 
     let appState = JSON.parse(JSON.stringify(defaultInitialState));
@@ -1934,6 +1955,7 @@
               ...data.appState
             };
             if (!appState.fixedCosts) appState.fixedCosts = [];
+            if (!appState.closedMonths) appState.closedMonths = [];
             if (!appState.googleCalendarEvents) appState.googleCalendarEvents = {};
             // ローカルバックアップ
             localStorage.setItem(`KAKEIBO_BACKUP_${uid}`, JSON.stringify(appState));
@@ -1992,6 +2014,7 @@
           try {
             appState = JSON.parse(saved);
             if (!appState.fixedCosts) appState.fixedCosts = [];
+            if (!appState.closedMonths) appState.closedMonths = [];
             if (!appState.googleCalendarEvents) appState.googleCalendarEvents = {};
           } catch(e) { console.error(e); }
         }
@@ -2252,6 +2275,10 @@
 
       if (editId) {
         const target = appState.journals.find(j => j.id === editId);
+        if (target && (isMonthClosed(target.date) || isMonthClosed(date))) {
+          alert('この仕訳は締め済みの月に属しているため編集できません。先に該当月の締めを解除してください。');
+          return;
+        }
         if (target) {
           target.date = date;
           target.debits = debits;
@@ -2263,6 +2290,10 @@
         }
         alert('仕訳を更新しました。続けて入力できます。');
       } else {
+        if (isMonthClosed(date)) {
+          alert('この日付は締め済みの月に属しているため仕訳を登録できません。先に該当月の締めを解除してください。');
+          return;
+        }
         appState.journals.unshift({
           id: 'j-' + Date.now(),
           date,
@@ -2390,6 +2421,16 @@
           badgeHtml = `<span class="badge badge-unsettled">未決済</span>`;
         }
 
+        const closed = isMonthClosed(j.date);
+        if (closed) {
+          badgeHtml += `<div style="margin-top:2px;"><span class="badge" style="background:#f1f5f9; color:#475569;" title="この月は締め済みのため編集・削除できません">🔒 締め済み</span></div>`;
+        }
+        const opButtons = closed
+          ? `<button class="btn btn-outline btn-sm" disabled style="opacity:0.4; cursor:not-allowed;">編集</button>
+             <button class="btn btn-outline btn-sm" disabled style="opacity:0.4; cursor:not-allowed;">削除</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="editJournal('${j.id}')">編集</button>
+             <button class="btn btn-outline btn-sm" onclick="deleteJournal('${j.id}')" style="color: #cf1322;">削除</button>`;
+
         tr.innerHTML = `
           <td style="text-align: center;">
             <input type="checkbox" class="journal-row-check" value="${j.id}" ${isChecked ? 'checked' : ''} onchange="toggleJournalSelect('${j.id}', this.checked)">
@@ -2402,8 +2443,7 @@
           <td>${j.tag ? `<span class="badge badge-tag">${j.tag}</span>` : '-'}</td>
           <td style="max-width: 180px; color: var(--text-sub);">${j.note || '-'}</td>
           <td style="text-align: center; white-space: nowrap;">
-            <button class="btn btn-outline btn-sm" onclick="editJournal('${j.id}')">編集</button>
-            <button class="btn btn-outline btn-sm" onclick="deleteJournal('${j.id}')" style="color: #cf1322;">削除</button>
+            ${opButtons}
           </td>
         `;
         tbody.appendChild(tr);
@@ -2451,9 +2491,16 @@
       const toDeleteIds = currentList.filter(j => selectedJournalIds.has(j.id)).map(j => j.id);
 
       if (toDeleteIds.length === 0) return;
-      if (!confirm(`選択された ${toDeleteIds.length} 件の仕訳を一括削除しますか？`)) return;
 
       const toDeleteJournals = appState.journals.filter(j => toDeleteIds.includes(j.id));
+      const closedTargets = toDeleteJournals.filter(j => isMonthClosed(j.date));
+      if (closedTargets.length > 0) {
+        alert(`選択した中に締め済みの月の仕訳が ${closedTargets.length} 件含まれているため、一括削除を中止しました。先に該当月の締めを解除してください。`);
+        return;
+      }
+
+      if (!confirm(`選択された ${toDeleteIds.length} 件の仕訳を一括削除しますか？`)) return;
+
       appState.journals = appState.journals.filter(j => !toDeleteIds.includes(j.id));
       toDeleteIds.forEach(id => selectedJournalIds.delete(id));
 
@@ -2519,6 +2566,11 @@
       const j = appState.journals.find(x => x.id === id);
       if (!j) return;
 
+      if (isMonthClosed(j.date)) {
+        alert('この仕訳は締め済みの月に属しているため編集できません。先に該当月の締めを解除してください。');
+        return;
+      }
+
       switchTab('entry');
       document.getElementById('entry-edit-id').value = j.id;
       document.getElementById('entry-date').value = j.date;
@@ -2558,8 +2610,12 @@
     }
 
     function deleteJournal(id) {
-      if (!confirm('この仕訳を削除しますか？')) return;
       const target = appState.journals.find(j => j.id === id);
+      if (target && isMonthClosed(target.date)) {
+        alert('この仕訳は締め済みの月に属しているため削除できません。先に該当月の締めを解除してください。');
+        return;
+      }
+      if (!confirm('この仕訳を削除しますか？')) return;
       appState.journals = appState.journals.filter(j => j.id !== id);
       selectedJournalIds.delete(id);
       revertReconciliationOnDelete(target);
@@ -2703,7 +2759,6 @@
       const bsAssets = {};
       const bsLiabilities = {};
       const bsEquity = {};
-      let cumulativeNetIncome = 0;
 
       appState.journals.forEach(j => {
         if (j.date <= endOfMonth) {
@@ -2712,24 +2767,19 @@
             if (type === 'asset') bsAssets[d.account] = (bsAssets[d.account] || 0) + d.amount;
             else if (type === 'liability') bsLiabilities[d.account] = (bsLiabilities[d.account] || 0) - d.amount;
             else if (type === 'equity') bsEquity[d.account] = (bsEquity[d.account] || 0) - d.amount;
-            else if (type === 'expense') cumulativeNetIncome -= d.amount;
-            else if (type === 'revenue') cumulativeNetIncome -= d.amount;
           });
           j.credits.forEach(c => {
             const type = accMap[c.account];
             if (type === 'asset') bsAssets[c.account] = (bsAssets[c.account] || 0) - c.amount;
             else if (type === 'liability') bsLiabilities[c.account] = (bsLiabilities[c.account] || 0) + c.amount;
             else if (type === 'equity') bsEquity[c.account] = (bsEquity[c.account] || 0) + c.amount;
-            else if (type === 'revenue') cumulativeNetIncome += c.amount;
-            else if (type === 'expense') cumulativeNetIncome += c.amount;
           });
         }
       });
 
       const totalAssets = Object.values(bsAssets).reduce((s, v) => s + v, 0);
       const totalLiabilities = Object.values(bsLiabilities).reduce((s, v) => s + v, 0);
-      const totalEquityBase = Object.values(bsEquity).reduce((s, v) => s + v, 0);
-      const totalEquityAll = totalEquityBase + cumulativeNetIncome;
+      const totalEquityAll = Object.values(bsEquity).reduce((s, v) => s + v, 0);
       const totalLiabAndEquity = totalLiabilities + totalEquityAll;
 
       const bsTbody = document.getElementById('bs-tbody');
@@ -2742,7 +2792,6 @@
         <tr style="background-color: #f1f5f9; font-weight: 700;"><td>負債合計</td><td style="text-align:right;">¥${totalLiabilities.toLocaleString()}</td></tr>
         <tr style="background-color: #f8fafc; font-weight: 700;"><td colspan="2">【純資産の部】</td></tr>
         ${Object.entries(bsEquity).map(([acc, amt]) => `<tr><td>${acc}</td><td style="text-align:right; font-weight:600;">¥${amt.toLocaleString()}</td></tr>`).join('')}
-        <tr><td>利益剰余金 (損益累計)</td><td style="text-align:right; font-weight:600;">¥${cumulativeNetIncome.toLocaleString()}</td></tr>
         <tr style="background-color: #f1f5f9; font-weight: 700;"><td>純資産合計</td><td style="text-align:right;">¥${totalEquityAll.toLocaleString()}</td></tr>
         <tr style="background-color: var(--income-bg); font-weight: 700;">
           <td>負債・純資産合計</td>
@@ -2750,9 +2799,195 @@
         </tr>
       `;
 
+      populateTrendYearSelect();
       renderMonthlyTrendPL();
       renderMonthlyTrendBS();
       onLineChartTypeChange();
+      updateCloseStatusUI(monthStr);
+    }
+
+    // ==========================================
+    // 3-2. 表示年セレクタ (③④⑤共通)
+    // ==========================================
+    function populateTrendYearSelect() {
+      const select = document.getElementById('trend-year-select');
+      const prevValue = select.value;
+
+      let years = new Set();
+      const nowYear = new Date().getFullYear();
+      years.add(nowYear);
+      appState.journals.forEach(j => {
+        const y = parseInt(String(j.date).split('-')[0], 10);
+        if (!isNaN(y)) years.add(y);
+      });
+
+      let sortedYears = Array.from(years).sort((a, b) => a - b);
+      const minY = sortedYears[0] - 1;
+      const maxY = sortedYears[sortedYears.length - 1] + 1;
+      sortedYears = [];
+      for (let y = minY; y <= maxY; y++) sortedYears.push(y);
+
+      select.innerHTML = sortedYears.map(y => `<option value="${y}">${y}年</option>`).join('');
+
+      if (prevValue && sortedYears.includes(Number(prevValue))) {
+        select.value = prevValue;
+      } else {
+        const reportMonthStr = document.getElementById('report-month').value;
+        const reportYear = reportMonthStr ? Number(reportMonthStr.split('-')[0]) : nowYear;
+        select.value = sortedYears.includes(reportYear) ? reportYear : nowYear;
+      }
+    }
+
+    function getSelectedTrendYear() {
+      const select = document.getElementById('trend-year-select');
+      const val = Number(select.value);
+      return val || new Date().getFullYear();
+    }
+
+    // ==========================================
+    // 3-3. 月次締め (月末決算) 処理
+    // ==========================================
+    function isMonthClosed(dateStr) {
+      if (!dateStr || !appState.closedMonths) return false;
+      const monthKey = String(dateStr).slice(0, 7);
+      return appState.closedMonths.some(c => c.month === monthKey);
+    }
+
+    function getClosedMonthRecord(monthStr) {
+      if (!appState.closedMonths) return null;
+      return appState.closedMonths.find(c => c.month === monthStr) || null;
+    }
+
+    function updateCloseStatusUI(monthStr) {
+      document.getElementById('close-target-month-label').textContent = monthStr || '-';
+      const record = monthStr ? getClosedMonthRecord(monthStr) : null;
+      const badge = document.getElementById('close-status-badge');
+      const btnClose = document.getElementById('btn-close-month');
+      const btnReopen = document.getElementById('btn-reopen-month');
+
+      if (record) {
+        badge.className = 'badge badge-settled';
+        badge.textContent = `締め済み (純利益: ¥${record.netIncome.toLocaleString()} を繰越利益剰余金へ振替済)`;
+        btnClose.style.display = 'none';
+        btnReopen.style.display = 'inline-flex';
+      } else {
+        badge.className = 'badge badge-unsettled';
+        badge.textContent = '未締め';
+        btnClose.style.display = 'inline-flex';
+        btnReopen.style.display = 'none';
+      }
+    }
+
+    function closeAccountingMonth() {
+      const monthStr = document.getElementById('report-month').value;
+      if (!monthStr) { alert('基準年月を選択してください。'); return; }
+
+      if (getClosedMonthRecord(monthStr)) {
+        alert('この月は既に締められています。');
+        return;
+      }
+
+      const [year, month] = monthStr.split('-').map(Number);
+      const startOfMonth = `${monthStr}-01`;
+      const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
+
+      const accMap = {};
+      appState.accounts.forEach(a => accMap[a.name] = a.type);
+
+      const revenueTotals = {};
+      const expenseTotals = {};
+
+      appState.journals.forEach(j => {
+        if (j.date >= startOfMonth && j.date <= endOfMonth) {
+          j.debits.forEach(d => {
+            const type = accMap[d.account];
+            if (type === 'expense') expenseTotals[d.account] = (expenseTotals[d.account] || 0) + d.amount;
+            else if (type === 'revenue') revenueTotals[d.account] = (revenueTotals[d.account] || 0) - d.amount;
+          });
+          j.credits.forEach(c => {
+            const type = accMap[c.account];
+            if (type === 'revenue') revenueTotals[c.account] = (revenueTotals[c.account] || 0) + c.amount;
+            else if (type === 'expense') expenseTotals[c.account] = (expenseTotals[c.account] || 0) - c.amount;
+          });
+        }
+      });
+
+      // ゼロ・マイナス（残高なし）の科目は締め仕訳の対象外
+      const revenueEntries = Object.entries(revenueTotals).filter(([, v]) => v > 0);
+      const expenseEntries = Object.entries(expenseTotals).filter(([, v]) => v > 0);
+
+      const totalRev = revenueEntries.reduce((s, [, v]) => s + v, 0);
+      const totalExp = expenseEntries.reduce((s, [, v]) => s + v, 0);
+      const netIncome = totalRev - totalExp;
+
+      if (!confirm(`【${monthStr}】を締めます。\n収益合計: ¥${totalRev.toLocaleString()}\n費用合計: ¥${totalExp.toLocaleString()}\n当期純利益: ¥${netIncome.toLocaleString()} を「繰越利益剰余金」へ振り替えます。\n締めた月の仕訳は編集・削除できなくなります。よろしいですか？`)) {
+        return;
+      }
+
+      // 繰越利益剰余金 科目が存在しなければ自動作成
+      const RETAINED_EARNINGS_ACC = '繰越利益剰余金';
+      if (!appState.accounts.some(a => a.name === RETAINED_EARNINGS_ACC)) {
+        appState.accounts.push({ id: 'acc-' + Date.now() + Math.random().toString(36).substr(2, 4), name: RETAINED_EARNINGS_ACC, type: 'equity', isUnsettled: false });
+      }
+
+      // 締め仕訳（収益・費用をゼロに戻し、差額を繰越利益剰余金へ振替）
+      const closingDebits = [];
+      const closingCredits = [];
+
+      revenueEntries.forEach(([acc, amt]) => closingDebits.push({ account: acc, amount: amt }));
+      expenseEntries.forEach(([acc, amt]) => closingCredits.push({ account: acc, amount: amt }));
+
+      if (netIncome >= 0) {
+        closingCredits.push({ account: RETAINED_EARNINGS_ACC, amount: netIncome });
+      } else {
+        closingDebits.push({ account: RETAINED_EARNINGS_ACC, amount: -netIncome });
+      }
+
+      // 借方・貸方が0円のみだと登録できないため、その場合は締め記録のみ残す
+      let closingJournalId = null;
+      if (closingDebits.length > 0 && closingCredits.length > 0) {
+        closingJournalId = 'j-close-' + Date.now();
+        appState.journals.push({
+          id: closingJournalId,
+          date: endOfMonth,
+          debits: closingDebits,
+          credits: closingCredits,
+          item: '',
+          tag: '月次締め',
+          note: `【${monthStr}】月次締め処理: 当期純利益を繰越利益剰余金へ振替`,
+          settled: true,
+          reconciliationId: null
+        });
+      }
+
+      if (!appState.closedMonths) appState.closedMonths = [];
+      appState.closedMonths.push({
+        month: monthStr,
+        closingJournalId,
+        netIncome,
+        closedAt: new Date().toISOString()
+      });
+
+      saveState();
+      alert(`【${monthStr}】の月次締めが完了しました。`);
+      refreshAllViews();
+    }
+
+    function reopenAccountingMonth() {
+      const monthStr = document.getElementById('report-month').value;
+      const record = getClosedMonthRecord(monthStr);
+      if (!record) { alert('この月は締められていません。'); return; }
+
+      if (!confirm(`【${monthStr}】の締めを解除しますか？\n繰越利益剰余金への振替仕訳は削除され、この月の仕訳は再び編集可能になります。`)) return;
+
+      if (record.closingJournalId) {
+        appState.journals = appState.journals.filter(j => j.id !== record.closingJournalId);
+      }
+      appState.closedMonths = appState.closedMonths.filter(c => c.month !== monthStr);
+
+      saveState();
+      alert(`【${monthStr}】の締めを解除しました。`);
+      refreshAllViews();
     }
 
     function renderPLPieChart(expensesMap) {
@@ -2846,7 +3081,7 @@
       appState.accounts.forEach(a => accMap[a.name] = a.type);
 
       let datasets = [];
-      const currentYear = new Date().getFullYear();
+      const currentYear = getSelectedTrendYear();
 
       if (type === 'summary_total') {
         const revs = Array(12).fill(0);
@@ -2980,7 +3215,7 @@
     }
 
     function renderMonthlyTrendPL() {
-      const year = String(new Date().getFullYear());
+      const year = String(getSelectedTrendYear());
       const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
@@ -3074,7 +3309,7 @@
     }
 
     function renderMonthlyTrendBS() {
-      const year = String(new Date().getFullYear());
+      const year = String(getSelectedTrendYear());
       const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
@@ -3174,7 +3409,7 @@
 
       const matched = appState.journals.filter(j => {
         if (monthStr !== 'ALL' && !j.date.startsWith(monthStr)) return false;
-        if (monthStr === 'ALL' && !j.date.startsWith(`${new Date().getFullYear()}-`)) return false;
+        if (monthStr === 'ALL' && !j.date.startsWith(`${getSelectedTrendYear()}-`)) return false;
 
         const hasDebit = j.debits.some(d => d.account === accName);
         const hasCredit = j.credits.some(c => c.account === accName);
@@ -3588,6 +3823,7 @@
 
     function renderBudgetView() {
       if (!appState.fixedCosts) appState.fixedCosts = [];
+      if (!appState.closedMonths) appState.closedMonths = [];
 
       const year = currentBudgetCalDate.getFullYear();
       const month = currentBudgetCalDate.getMonth();
@@ -4812,6 +5048,7 @@
             ...restoredState
           };
           if (!appState.fixedCosts) appState.fixedCosts = [];
+          if (!appState.closedMonths) appState.closedMonths = [];
           if (!appState.googleCalendarEvents) appState.googleCalendarEvents = {};
 
           saveState();
