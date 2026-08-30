@@ -1546,6 +1546,24 @@
     </div>
   </div>
 
+  <!-- 月次締め内訳(諸口の中身)モーダル -->
+  <div id="month-closing-detail-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 550px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+        <span id="month-closing-detail-title" style="font-weight: 700; font-size: 1rem; color: var(--freee-blue);">月次締め内訳</span>
+        <button class="btn btn-outline btn-sm" onclick="closeMonthClosingDetailModal()">✕</button>
+      </div>
+      <div class="table-container" style="border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+        <table>
+          <tbody id="month-closing-detail-tbody"></tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button type="button" class="btn btn-outline" onclick="closeMonthClosingDetailModal()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 一括編集モーダル -->
   <div id="bulk-edit-modal" class="modal-overlay">
     <div class="modal-box" style="max-width: 400px;">
@@ -2411,7 +2429,9 @@
         const creditHtml = j.credits.map(c => `<div><strong>${c.account}</strong>: ¥${c.amount.toLocaleString()}</div>`).join('');
 
         let badgeHtml = '';
-        if (j.settled) {
+        if (j.tag === '月次締め') {
+          badgeHtml = `<span class="badge badge-settled" style="cursor: pointer; text-decoration: underline;" onclick="showMonthClosingDetail('${j.closingMonth}')" title="諸口の内訳(収益・費用の月次合計)を表示">決済済 [月次締め] 🔍</span>`;
+        } else if (j.settled) {
           if (j.reconciliationId) {
             badgeHtml = `<span class="badge badge-settled" style="cursor: pointer; text-decoration: underline;" onclick="showReconciliationDetail('${j.reconciliationId}')" title="消込詳細・口座対応を表示">決済済 [消込済] 🔍</span>`;
           } else {
@@ -2878,15 +2898,7 @@
       }
     }
 
-    function closeAccountingMonth() {
-      const monthStr = document.getElementById('report-month').value;
-      if (!monthStr) { alert('基準年月を選択してください。'); return; }
-
-      if (getClosedMonthRecord(monthStr)) {
-        alert('この月は既に締められています。');
-        return;
-      }
-
+    function computeMonthlyPLBreakdown(monthStr) {
       const [year, month] = monthStr.split('-').map(Number);
       const startOfMonth = `${monthStr}-01`;
       const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
@@ -2898,7 +2910,7 @@
       const expenseTotals = {};
 
       appState.journals.forEach(j => {
-        if (j.date >= startOfMonth && j.date <= endOfMonth) {
+        if (j.date >= startOfMonth && j.date <= endOfMonth && j.tag !== '月次締め') {
           j.debits.forEach(d => {
             const type = accMap[d.account];
             if (type === 'expense') expenseTotals[d.account] = (expenseTotals[d.account] || 0) + d.amount;
@@ -2912,58 +2924,91 @@
         }
       });
 
-      // ゼロ・マイナス（残高なし）の科目は締め仕訳の対象外
-      const revenueEntries = Object.entries(revenueTotals).filter(([, v]) => v > 0);
-      const expenseEntries = Object.entries(expenseTotals).filter(([, v]) => v > 0);
-
-      const totalRev = revenueEntries.reduce((s, [, v]) => s + v, 0);
-      const totalExp = expenseEntries.reduce((s, [, v]) => s + v, 0);
+      const totalRev = Object.values(revenueTotals).reduce((s, v) => s + v, 0);
+      const totalExp = Object.values(expenseTotals).reduce((s, v) => s + v, 0);
       const netIncome = totalRev - totalExp;
+
+      return { monthStr, endOfMonth, revenueTotals, expenseTotals, totalRev, totalExp, netIncome };
+    }
+
+    function closeAccountingMonth() {
+      const monthStr = document.getElementById('report-month').value;
+      if (!monthStr) { alert('基準年月を選択してください。'); return; }
+
+      if (getClosedMonthRecord(monthStr)) {
+        alert('この月は既に締められています。');
+        return;
+      }
+
+      const { endOfMonth, totalRev, totalExp, netIncome } = computeMonthlyPLBreakdown(monthStr);
 
       if (!confirm(`【${monthStr}】を締めます。\n収益合計: ¥${totalRev.toLocaleString()}\n費用合計: ¥${totalExp.toLocaleString()}\n当期純利益: ¥${netIncome.toLocaleString()} を「繰越利益剰余金」へ振り替えます。\n締めた月の仕訳は編集・削除できなくなります。よろしいですか？`)) {
         return;
       }
 
-      // 繰越利益剰余金 科目が存在しなければ自動作成
+      // 諸口・当期純利益・繰越利益剰余金 科目が存在しなければ自動作成
+      const SUNDRY_ACC = '諸口';
+      const INCOME_SUMMARY_ACC = '当期純利益';
       const RETAINED_EARNINGS_ACC = '繰越利益剰余金';
-      if (!appState.accounts.some(a => a.name === RETAINED_EARNINGS_ACC)) {
-        appState.accounts.push({ id: 'acc-' + Date.now() + Math.random().toString(36).substr(2, 4), name: RETAINED_EARNINGS_ACC, type: 'equity', isUnsettled: false });
-      }
+      [SUNDRY_ACC, INCOME_SUMMARY_ACC, RETAINED_EARNINGS_ACC].forEach(name => {
+        if (!appState.accounts.some(a => a.name === name)) {
+          appState.accounts.push({ id: 'acc-' + Date.now() + Math.random().toString(36).substr(2, 4), name, type: 'equity', isUnsettled: false });
+        }
+      });
 
-      // 締め仕訳（収益・費用をゼロに戻し、差額を繰越利益剰余金へ振替）
-      const closingDebits = [];
-      const closingCredits = [];
+      const closingJournalIds = [];
+      const amt = Math.abs(netIncome);
 
-      revenueEntries.forEach(([acc, amt]) => closingDebits.push({ account: acc, amount: amt }));
-      expenseEntries.forEach(([acc, amt]) => closingCredits.push({ account: acc, amount: amt }));
+      if (amt > 0) {
+        const idA = 'j-close-' + Date.now() + '-a';
+        const idB = 'j-close-' + Date.now() + '-b';
 
-      if (netIncome >= 0) {
-        closingCredits.push({ account: RETAINED_EARNINGS_ACC, amount: netIncome });
-      } else {
-        closingDebits.push({ account: RETAINED_EARNINGS_ACC, amount: -netIncome });
-      }
+        if (netIncome >= 0) {
+          // 諸口 ○○円 / 当期純利益 ○○円
+          appState.journals.push({
+            id: idA, date: endOfMonth,
+            debits: [{ account: SUNDRY_ACC, amount: amt }],
+            credits: [{ account: INCOME_SUMMARY_ACC, amount: amt }],
+            item: '', tag: '月次締め', closingMonth: monthStr,
+            note: `【${monthStr}】月次締め処理 (1/2): 収益・費用の合算(諸口)を当期純利益へ振替`,
+            settled: true, reconciliationId: null
+          });
+          // 当期純利益 ○○円 / 繰越利益剰余金 ○○円
+          appState.journals.push({
+            id: idB, date: endOfMonth,
+            debits: [{ account: INCOME_SUMMARY_ACC, amount: amt }],
+            credits: [{ account: RETAINED_EARNINGS_ACC, amount: amt }],
+            item: '', tag: '月次締め', closingMonth: monthStr,
+            note: `【${monthStr}】月次締め処理 (2/2): 当期純利益を繰越利益剰余金へ振替`,
+            settled: true, reconciliationId: null
+          });
+        } else {
+          // 純損失の場合は貸借を反転
+          appState.journals.push({
+            id: idA, date: endOfMonth,
+            debits: [{ account: INCOME_SUMMARY_ACC, amount: amt }],
+            credits: [{ account: SUNDRY_ACC, amount: amt }],
+            item: '', tag: '月次締め', closingMonth: monthStr,
+            note: `【${monthStr}】月次締め処理 (1/2): 収益・費用の合算(諸口)を当期純利益(純損失)へ振替`,
+            settled: true, reconciliationId: null
+          });
+          appState.journals.push({
+            id: idB, date: endOfMonth,
+            debits: [{ account: RETAINED_EARNINGS_ACC, amount: amt }],
+            credits: [{ account: INCOME_SUMMARY_ACC, amount: amt }],
+            item: '', tag: '月次締め', closingMonth: monthStr,
+            note: `【${monthStr}】月次締め処理 (2/2): 当期純損失を繰越利益剰余金へ振替`,
+            settled: true, reconciliationId: null
+          });
+        }
 
-      // 借方・貸方が0円のみだと登録できないため、その場合は締め記録のみ残す
-      let closingJournalId = null;
-      if (closingDebits.length > 0 && closingCredits.length > 0) {
-        closingJournalId = 'j-close-' + Date.now();
-        appState.journals.push({
-          id: closingJournalId,
-          date: endOfMonth,
-          debits: closingDebits,
-          credits: closingCredits,
-          item: '',
-          tag: '月次締め',
-          note: `【${monthStr}】月次締め処理: 当期純利益を繰越利益剰余金へ振替`,
-          settled: true,
-          reconciliationId: null
-        });
+        closingJournalIds.push(idA, idB);
       }
 
       if (!appState.closedMonths) appState.closedMonths = [];
       appState.closedMonths.push({
         month: monthStr,
-        closingJournalId,
+        closingJournalIds,
         netIncome,
         closedAt: new Date().toISOString()
       });
@@ -2980,14 +3025,57 @@
 
       if (!confirm(`【${monthStr}】の締めを解除しますか？\n繰越利益剰余金への振替仕訳は削除され、この月の仕訳は再び編集可能になります。`)) return;
 
-      if (record.closingJournalId) {
-        appState.journals = appState.journals.filter(j => j.id !== record.closingJournalId);
+      const idsToRemove = record.closingJournalIds || (record.closingJournalId ? [record.closingJournalId] : []);
+      if (idsToRemove.length > 0) {
+        appState.journals = appState.journals.filter(j => !idsToRemove.includes(j.id));
       }
       appState.closedMonths = appState.closedMonths.filter(c => c.month !== monthStr);
 
       saveState();
       alert(`【${monthStr}】の締めを解除しました。`);
       refreshAllViews();
+    }
+
+    // 月次締め仕訳をクリックした際に、諸口の内訳(収益・費用科目ごとの月次合計)を表示
+    function showMonthClosingDetail(monthStr) {
+      const { revenueTotals, expenseTotals, totalRev, totalExp, netIncome } = computeMonthlyPLBreakdown(monthStr);
+      const modal = document.getElementById('month-closing-detail-modal');
+      const title = document.getElementById('month-closing-detail-title');
+      const tbody = document.getElementById('month-closing-detail-tbody');
+
+      title.textContent = `【${monthStr}】月次締め内訳 (諸口の中身)`;
+
+      let rows = '';
+      rows += `<tr style="background-color: #f8fafc; font-weight: 700;"><td colspan="2">【収益の部】</td></tr>`;
+      const revEntries = Object.entries(revenueTotals);
+      if (revEntries.length === 0) {
+        rows += `<tr><td colspan="2" style="color: var(--text-sub);">(収益なし)</td></tr>`;
+      } else {
+        revEntries.forEach(([acc, amt]) => {
+          rows += `<tr><td>${acc}</td><td style="text-align:right; font-weight:600; color: var(--income-green);">¥${amt.toLocaleString()}</td></tr>`;
+        });
+      }
+      rows += `<tr style="background-color: #f1f5f9; font-weight: 700;"><td>収益合計</td><td style="text-align:right; color: var(--income-green);">¥${totalRev.toLocaleString()}</td></tr>`;
+
+      rows += `<tr style="background-color: #f8fafc; font-weight: 700;"><td colspan="2">【費用の部】</td></tr>`;
+      const expEntries = Object.entries(expenseTotals);
+      if (expEntries.length === 0) {
+        rows += `<tr><td colspan="2" style="color: var(--text-sub);">(費用なし)</td></tr>`;
+      } else {
+        expEntries.forEach(([acc, amt]) => {
+          rows += `<tr><td>${acc}</td><td style="text-align:right; font-weight:600; color: var(--expense-coral);">¥${amt.toLocaleString()}</td></tr>`;
+        });
+      }
+      rows += `<tr style="background-color: #f1f5f9; font-weight: 700;"><td>費用合計</td><td style="text-align:right; color: var(--expense-coral);">¥${totalExp.toLocaleString()}</td></tr>`;
+
+      rows += `<tr style="background-color: var(--freee-blue-light); font-weight: 700;"><td>当期純利益 (収益－費用)</td><td style="text-align:right; color: var(--freee-blue);">¥${netIncome.toLocaleString()}</td></tr>`;
+
+      tbody.innerHTML = rows;
+      modal.classList.add('active');
+    }
+
+    function closeMonthClosingDetailModal() {
+      document.getElementById('month-closing-detail-modal').classList.remove('active');
     }
 
     function renderPLPieChart(expensesMap) {
