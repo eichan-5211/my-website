@@ -2453,8 +2453,11 @@
       if (toDeleteIds.length === 0) return;
       if (!confirm(`選択された ${toDeleteIds.length} 件の仕訳を一括削除しますか？`)) return;
 
+      const toDeleteJournals = appState.journals.filter(j => toDeleteIds.includes(j.id));
       appState.journals = appState.journals.filter(j => !toDeleteIds.includes(j.id));
       toDeleteIds.forEach(id => selectedJournalIds.delete(id));
+
+      toDeleteJournals.forEach(j => revertReconciliationOnDelete(j));
 
       saveState();
       renderJournalTable();
@@ -2534,10 +2537,32 @@
       updateBalanceCalculation();
     }
 
+    // 消込決済仕訳が削除された際に、紐づく元の未決済取引を未決済へ戻す
+    function revertReconciliationOnDelete(deletedJournal) {
+      if (!deletedJournal || deletedJournal.tag !== '消込決済' || !deletedJournal.reconciliationId) return;
+
+      const recId = deletedJournal.reconciliationId;
+      let revertedCount = 0;
+
+      appState.journals.forEach(j => {
+        if (j.reconciliationId === recId && j.tag !== '消込決済') {
+          j.settled = false;
+          j.reconciliationId = null;
+          revertedCount++;
+        }
+      });
+
+      if (revertedCount > 0) {
+        alert(`消込仕訳を削除したため、紐づいていた ${revertedCount} 件の取引を未決済に戻しました。`);
+      }
+    }
+
     function deleteJournal(id) {
       if (!confirm('この仕訳を削除しますか？')) return;
+      const target = appState.journals.find(j => j.id === id);
       appState.journals = appState.journals.filter(j => j.id !== id);
       selectedJournalIds.delete(id);
+      revertReconciliationOnDelete(target);
       saveState();
       renderJournalTable();
     }
