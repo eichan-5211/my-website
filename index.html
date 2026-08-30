@@ -643,8 +643,17 @@
               <input type="text" id="entry-note" class="form-control" placeholder="取引メモを入力">
             </div>
 
+            <div class="form-group">
+              <label class="form-label">決済状態</label>
+              <select id="entry-settlement-mode" class="form-control" onchange="updateBalanceCalculation()">
+                <option value="auto">自動判定 (未決済科目が含まれる場合は自動で未決済)</option>
+                <option value="settled">決済済みにする</option>
+                <option value="unsettled">未決済にする</option>
+              </select>
+            </div>
+
             <div id="settlement-preview-bar" style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 14px; padding: 6px 10px; background: #fafbfc; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
-              判定状態: <span id="settlement-preview-text" class="badge badge-settled">決済済み</span> (未決済科目が含まれる場合は自動で未決済になります)
+              判定状態: <span id="settlement-preview-text" class="badge badge-settled">決済済み</span> <span id="settlement-preview-note">(未決済科目が含まれる場合は自動で未決済になります)</span>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 8px;">
@@ -2134,18 +2143,31 @@
       const crAccs = Array.from(document.querySelectorAll('.credit-account-select')).map(s => s.value);
       const allSelectedAccs = [...debAccs, ...crAccs];
 
-      const isUnsettled = allSelectedAccs.some(accName => {
+      const isUnsettledAuto = allSelectedAccs.some(accName => {
         const acc = appState.accounts.find(a => a.name === accName);
         return acc && acc.isUnsettled;
       });
 
+      const settlementMode = document.getElementById('entry-settlement-mode').value;
       const previewText = document.getElementById('settlement-preview-text');
-      if (isUnsettled) {
+      const previewNote = document.getElementById('settlement-preview-note');
+
+      if (settlementMode === 'settled') {
+        previewText.className = 'badge badge-settled';
+        previewText.textContent = '決済済み (手動指定)';
+        previewNote.textContent = '(手動で「決済済みにする」を選択中のため、科目にかかわらず決済済みで登録されます)';
+      } else if (settlementMode === 'unsettled') {
+        previewText.className = 'badge badge-unsettled';
+        previewText.textContent = '未決済 (手動指定・消込対象)';
+        previewNote.textContent = '(手動で「未決済にする」を選択中のため、科目にかかわらず未決済で登録され、消込タブに表示されます)';
+      } else if (isUnsettledAuto) {
         previewText.className = 'badge badge-unsettled';
         previewText.textContent = '未決済 (消込対象)';
+        previewNote.textContent = '(未決済対象科目が含まれるため自動判定で未決済になります)';
       } else {
         previewText.className = 'badge badge-settled';
         previewText.textContent = '決済済み (即時決済)';
+        previewNote.textContent = '(未決済対象科目が含まれていないため自動判定で決済済みになります)';
       }
     }
 
@@ -2217,7 +2239,16 @@
         const acc = appState.accounts.find(a => a.name === accName);
         return acc && acc.isUnsettled;
       });
-      const settled = !hasUnsettledAccount;
+
+      const settlementMode = document.getElementById('entry-settlement-mode').value;
+      let settled;
+      if (settlementMode === 'settled') {
+        settled = true;
+      } else if (settlementMode === 'unsettled') {
+        settled = false;
+      } else {
+        settled = !hasUnsettledAccount;
+      }
 
       if (editId) {
         const target = appState.journals.find(j => j.id === editId);
@@ -2491,6 +2522,7 @@
       document.getElementById('entry-item').value = j.item || '';
       document.getElementById('entry-tag').value = j.tag || '';
       document.getElementById('entry-note').value = j.note || '';
+      document.getElementById('entry-settlement-mode').value = j.settled ? 'settled' : 'unsettled';
 
       document.getElementById('debit-rows-container').innerHTML = '';
       document.getElementById('credit-rows-container').innerHTML = '';
