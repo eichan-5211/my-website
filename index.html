@@ -1680,6 +1680,10 @@
     let selectedMasterItems = new Set();
     let selectedMasterTags = new Set();
     let selectedMasterTemplates = new Set();
+    let trendPLMatrixCache = null;
+    let trendPLYearCache = null;
+    let trendBSMatrixCache = null;
+    let trendBSYearCache = null;
     let plPieChartInstance = null;
     let trendLineChartInstance = null;
 
@@ -2728,35 +2732,29 @@
       if (!monthStr) return;
 
       const [year, month] = monthStr.split('-').map(Number);
-      const startOfMonth = `${monthStr}-01`;
-      const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
+      const mIdx = month - 1;
 
-      const accMap = {};
-      appState.accounts.forEach(a => accMap[a.name] = a.type);
+      // 推移表(③④)を先に計算・描画し、その結果(勘定科目と値)をそのまま単月①②へコピーする
+      populateTrendYearSelect();
+      renderMonthlyTrendPL();
+      renderMonthlyTrendBS();
 
-      const plExpenses = {};
+      // ① 単月 P/L 表 (推移P/Lの該当月列をそのままコピー)
       const plRevenues = {};
-
-      appState.journals.forEach(j => {
-        if (j.date >= startOfMonth && j.date <= endOfMonth) {
-          j.debits.forEach(d => {
-            const type = accMap[d.account];
-            if (type === 'expense') plExpenses[d.account] = (plExpenses[d.account] || 0) + d.amount;
-            else if (type === 'revenue') plRevenues[d.account] = (plRevenues[d.account] || 0) - d.amount;
-          });
-          j.credits.forEach(c => {
-            const type = accMap[c.account];
-            if (type === 'revenue') plRevenues[c.account] = (plRevenues[c.account] || 0) + c.amount;
-            else if (type === 'expense') plExpenses[c.account] = (plExpenses[c.account] || 0) - c.amount;
-          });
-        }
-      });
+      const plExpenses = {};
+      if (trendPLMatrixCache && String(year) === trendPLYearCache) {
+        Object.entries(trendPLMatrixCache).forEach(([accName, data]) => {
+          const amt = data.months[mIdx] || 0;
+          if (amt === 0) return;
+          if (data.type === 'revenue') plRevenues[accName] = amt;
+          else if (data.type === 'expense') plExpenses[accName] = amt;
+        });
+      }
 
       const totalRev = Object.values(plRevenues).reduce((s, v) => s + v, 0);
       const totalExp = Object.values(plExpenses).reduce((s, v) => s + v, 0);
       const netIncome = totalRev - totalExp;
 
-      // ① 単月 P/L 表
       const plTbody = document.getElementById('pl-tbody');
       plTbody.innerHTML = `
         <tr style="background-color: #f8fafc; font-weight: 700;"><td colspan="2">【収益の部】</td></tr>
@@ -2775,27 +2773,19 @@
 
       renderPLPieChart(plExpenses);
 
-      // ② 単月 B/S
+      // ② 単月 B/S (推移B/Sの該当月末列をそのままコピー)
       const bsAssets = {};
       const bsLiabilities = {};
       const bsEquity = {};
-
-      appState.journals.forEach(j => {
-        if (j.date <= endOfMonth) {
-          j.debits.forEach(d => {
-            const type = accMap[d.account];
-            if (type === 'asset') bsAssets[d.account] = (bsAssets[d.account] || 0) + d.amount;
-            else if (type === 'liability') bsLiabilities[d.account] = (bsLiabilities[d.account] || 0) - d.amount;
-            else if (type === 'equity') bsEquity[d.account] = (bsEquity[d.account] || 0) - d.amount;
-          });
-          j.credits.forEach(c => {
-            const type = accMap[c.account];
-            if (type === 'asset') bsAssets[c.account] = (bsAssets[c.account] || 0) - c.amount;
-            else if (type === 'liability') bsLiabilities[c.account] = (bsLiabilities[c.account] || 0) + c.amount;
-            else if (type === 'equity') bsEquity[c.account] = (bsEquity[c.account] || 0) + c.amount;
-          });
-        }
-      });
+      if (trendBSMatrixCache && String(year) === trendBSYearCache) {
+        Object.entries(trendBSMatrixCache).forEach(([accName, data]) => {
+          const amt = data.months[mIdx] || 0;
+          if (amt === 0) return;
+          if (data.type === 'asset') bsAssets[accName] = amt;
+          else if (data.type === 'liability') bsLiabilities[accName] = amt;
+          else if (data.type === 'equity') bsEquity[accName] = amt;
+        });
+      }
 
       const totalAssets = Object.values(bsAssets).reduce((s, v) => s + v, 0);
       const totalLiabilities = Object.values(bsLiabilities).reduce((s, v) => s + v, 0);
@@ -2819,9 +2809,6 @@
         </tr>
       `;
 
-      populateTrendYearSelect();
-      renderMonthlyTrendPL();
-      renderMonthlyTrendBS();
       onLineChartTypeChange();
       updateCloseStatusUI(monthStr);
     }
@@ -3348,6 +3335,10 @@
         }
       });
 
+      // 単月P/L表示用にキャッシュ（推移表の計算結果をそのまま利用するため）
+      trendPLMatrixCache = matrix;
+      trendPLYearCache = year;
+
       const table = document.getElementById('trend-pl-table');
       let thead = `<thead><tr><th style="min-width: 140px;">区分 / 勘定科目</th>`;
       months.forEach(m => { thead += `<th style="text-align: right; width: 68px;">${Number(m)}月</th>`; });
@@ -3441,6 +3432,10 @@
           matrix[a.name].months[mIdx] = balances[a.name] || 0;
         });
       });
+
+      // 単月B/S表示用にキャッシュ（推移表の計算結果をそのまま利用するため）
+      trendBSMatrixCache = matrix;
+      trendBSYearCache = year;
 
       const table = document.getElementById('trend-bs-table');
       let thead = `<thead><tr><th style="min-width: 140px;">区分 / 勘定科目</th>`;
