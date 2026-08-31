@@ -3419,7 +3419,14 @@
       const accMap = {};
       appState.accounts.forEach(a => accMap[a.name] = a.type);
 
-      const bsAccounts = appState.accounts.filter(a => a.type === 'asset' || a.type === 'liability' || a.type === 'equity');
+      // 「諸口」「当期純利益」は月次締めの中間集計用の一時的な科目であり、
+// 貸借対照表(純資産の部)には表示しない。繰越利益剰余金のみを表示する。
+const BS_EXCLUDED_EQUITY_ACCOUNTS = ['諸口', '当期純利益'];
+const bsAccounts = appState.accounts.filter(a =>
+  a.type === 'asset' ||
+  a.type === 'liability' ||
+  (a.type === 'equity' && !BS_EXCLUDED_EQUITY_ACCOUNTS.includes(a.name))
+);
       const matrix = {};
       bsAccounts.forEach(a => {
         matrix[a.name] = { type: a.type, months: Array(12).fill(0) };
