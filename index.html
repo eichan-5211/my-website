@@ -2895,37 +2895,54 @@
     }
 
     function computeMonthlyPLBreakdown(monthStr) {
-      const [year, month] = monthStr.split('-').map(Number);
-      const startOfMonth = `${monthStr}-01`;
-      const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
+  const [year, month] = monthStr.split('-').map(Number);
+  const endOfMonth = new Date(year, month, 0).toISOString().split('T')[0];
+  const mIdx = month - 1;
 
-      const accMap = {};
-      appState.accounts.forEach(a => accMap[a.name] = a.type);
+  const accMap = {};
+  appState.accounts.forEach(a => accMap[a.name] = a.type);
 
-      const revenueTotals = {};
-      const expenseTotals = {};
+  // ③推移P/Lテーブル(renderMonthlyTrendPL)とまったく同じロジックで
+  // 「その月が属する年」を対象に勘定科目ごとの月別発生額を集計し、
+  // 該当月の値だけを取り出す。これにより表示年セレクタの状態に関係なく
+  // 常に推移表の数値と一致する。
+  const matrix = {};
+  appState.accounts.filter(a => a.type === 'revenue' || a.type === 'expense').forEach(a => {
+    matrix[a.name] = { type: a.type, amt: 0 };
+  });
 
-      appState.journals.forEach(j => {
-        if (j.date >= startOfMonth && j.date <= endOfMonth && j.tag !== '月次締め') {
-          j.debits.forEach(d => {
-            const type = accMap[d.account];
-            if (type === 'expense') expenseTotals[d.account] = (expenseTotals[d.account] || 0) + d.amount;
-            else if (type === 'revenue') revenueTotals[d.account] = (revenueTotals[d.account] || 0) - d.amount;
-          });
-          j.credits.forEach(c => {
-            const type = accMap[c.account];
-            if (type === 'revenue') revenueTotals[c.account] = (revenueTotals[c.account] || 0) + c.amount;
-            else if (type === 'expense') expenseTotals[c.account] = (expenseTotals[c.account] || 0) - c.amount;
-          });
-        }
-      });
+  const yearPrefix = `${year}-`;
+  appState.journals.forEach(j => {
+    if (!j.date.startsWith(yearPrefix)) return;
+    const jMIdx = parseInt(j.date.split('-')[1], 10) - 1;
+    if (jMIdx !== mIdx) return;
 
-      const totalRev = Object.values(revenueTotals).reduce((s, v) => s + v, 0);
-      const totalExp = Object.values(expenseTotals).reduce((s, v) => s + v, 0);
-      const netIncome = totalRev - totalExp;
+    j.debits.forEach(d => {
+      const t = accMap[d.account];
+      if (t === 'expense' && matrix[d.account]) matrix[d.account].amt += d.amount;
+      else if (t === 'revenue' && matrix[d.account]) matrix[d.account].amt -= d.amount;
+    });
+    j.credits.forEach(c => {
+      const t = accMap[c.account];
+      if (t === 'revenue' && matrix[c.account]) matrix[c.account].amt += c.amount;
+      else if (t === 'expense' && matrix[c.account]) matrix[c.account].amt -= c.amount;
+    });
+  });
 
-      return { monthStr, endOfMonth, revenueTotals, expenseTotals, totalRev, totalExp, netIncome };
-    }
+  const revenueTotals = {};
+  const expenseTotals = {};
+  Object.entries(matrix).forEach(([name, data]) => {
+    if (data.amt === 0) return;
+    if (data.type === 'revenue') revenueTotals[name] = data.amt;
+    else expenseTotals[name] = data.amt;
+  });
+
+  const totalRev = Object.values(revenueTotals).reduce((s, v) => s + v, 0);
+  const totalExp = Object.values(expenseTotals).reduce((s, v) => s + v, 0);
+  const netIncome = totalRev - totalExp;
+
+  return { monthStr, endOfMonth, revenueTotals, expenseTotals, totalRev, totalExp, netIncome };
+}
 
     function closeAccountingMonth() {
       const monthStr = document.getElementById('report-month').value;
